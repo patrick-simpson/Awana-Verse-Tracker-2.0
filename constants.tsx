@@ -1,5 +1,6 @@
 import { ThemeConfig, AnimationType } from './types.ts';
 
+// Comprehensive theme definitions for various milestones
 export const THEMES: Record<number, ThemeConfig> = {
   0: {
     name: "Sunrise Savanna",
@@ -192,12 +193,18 @@ export const THEMES: Record<number, ThemeConfig> = {
   }
 };
 
+/**
+ * Returns the appropriate theme configuration based on the current verse count.
+ */
 export const getTheme = (count: number): ThemeConfig => {
   const floor = Math.min(1000, Math.floor(count / 50) * 50);
   return THEMES[floor] || THEMES[0];
 };
 
+/**
+ * Global build information for version tracking.
+ */
 export const BUILD_INFO = {
-  number: "2.6.0-JOYFUL",
+  number: "3.5.0-BROADCAST",
   timestamp: new Date().toLocaleDateString()
 };

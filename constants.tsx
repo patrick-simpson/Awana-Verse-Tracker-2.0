@@ -1,4 +1,3 @@
-
 import { ThemeConfig, AnimationType } from './types.ts';
 
 export const THEMES: Record<number, ThemeConfig> = {
@@ -9,7 +8,16 @@ export const THEMES: Record<number, ThemeConfig> = {
     text: "text-white",
     secondaryText: "text-orange-950",
     animationType: AnimationType.FALL,
-    elements: ["☀️", "🦒", "🐘", "🌳"]
+    elements: ["🦒", "🐘", "☀️", "🌳"]
+  },
+  50: {
+    name: "Golden Hour",
+    gradient: "from-orange-600 via-red-500 to-amber-400",
+    accent: "#ef4444",
+    text: "text-white",
+    secondaryText: "text-orange-100",
+    animationType: AnimationType.BOUNCE,
+    elements: ["🌅", "🦓", "🔥", "🌾"]
   },
   100: {
     name: "Village Gathering",
@@ -20,6 +28,15 @@ export const THEMES: Record<number, ThemeConfig> = {
     animationType: AnimationType.SLIDE,
     elements: ["🗺️", "🏠", "📍", "🛖", "🥁"]
   },
+  150: {
+    name: "Baobab Shade",
+    gradient: "from-green-800 via-emerald-900 to-stone-900",
+    accent: "#10b981",
+    text: "text-green-50",
+    secondaryText: "text-green-400",
+    animationType: AnimationType.WAVE,
+    elements: ["🌳", "🍃", "🐒", "🦎"]
+  },
   200: {
     name: "Breaking Ground",
     gradient: "from-teal-600 via-emerald-700 to-emerald-900",
@@ -28,6 +45,15 @@ export const THEMES: Record<number, ThemeConfig> = {
     secondaryText: "text-teal-200",
     animationType: AnimationType.POP,
     elements: ["🔨", "🏫", "🏗️", "📐", "🧱"]
+  },
+  250: {
+    name: "Construction Joy",
+    gradient: "from-sky-500 via-teal-500 to-emerald-600",
+    accent: "#fef08a",
+    text: "text-white",
+    secondaryText: "text-sky-100",
+    animationType: AnimationType.ZOOM,
+    elements: ["👷", "🚧", "📦", "🪚"]
   },
   300: {
     name: "Jungle Growth",
@@ -38,14 +64,32 @@ export const THEMES: Record<number, ThemeConfig> = {
     animationType: AnimationType.ROTATE,
     elements: ["🍃", "🐒", "🦜", "🌿", "🐍"]
   },
+  350: {
+    name: "Deep Forest",
+    gradient: "from-emerald-950 via-green-900 to-emerald-900",
+    accent: "#34d399",
+    text: "text-emerald-100",
+    secondaryText: "text-emerald-500",
+    animationType: AnimationType.BLUR,
+    elements: ["🦋", "🐸", "🌺", "🍄"]
+  },
   400: {
     name: "Great River Flow",
     gradient: "from-blue-500 via-blue-700 to-indigo-900",
     accent: "#3B82F6",
     text: "text-white",
     secondaryText: "text-blue-300",
-    animationType: AnimationType.ZOOM,
+    animationType: AnimationType.WAVE,
     elements: ["🌊", "🌈", "🐟", "💧", "🛶"]
+  },
+  450: {
+    name: "Delta Spirit",
+    gradient: "from-cyan-600 via-blue-800 to-indigo-950",
+    accent: "#7dd3fc",
+    text: "text-white",
+    secondaryText: "text-cyan-200",
+    animationType: AnimationType.SPIRAL,
+    elements: ["🐊", "🐚", "🌴", "🚤"]
   },
   500: {
     name: "Open Heavens",
@@ -53,8 +97,17 @@ export const THEMES: Record<number, ThemeConfig> = {
     accent: "#FCD34D",
     text: "text-yellow-200",
     secondaryText: "text-indigo-400",
-    animationType: AnimationType.BLUR,
+    animationType: AnimationType.CELEBRATE,
     elements: ["✨", "🌙", "🦉", "⭐", "🔭"]
+  },
+  550: {
+    name: "Midnight Glow",
+    gradient: "from-black via-slate-900 to-purple-950",
+    accent: "#818cf8",
+    text: "text-purple-100",
+    secondaryText: "text-purple-400",
+    animationType: AnimationType.FALL,
+    elements: ["🦇", "🌑", "🔮", "🕯️"]
   },
   600: {
     name: "Vibrant Market",
@@ -65,14 +118,32 @@ export const THEMES: Record<number, ThemeConfig> = {
     animationType: AnimationType.WAVE,
     elements: ["🍎", "🧺", "👗", "🥁", "🍍"]
   },
+  650: {
+    name: "Bazaar Lights",
+    gradient: "from-pink-600 via-rose-700 to-amber-900",
+    accent: "#fbcfe8",
+    text: "text-pink-50",
+    secondaryText: "text-pink-300",
+    animationType: AnimationType.BOUNCE,
+    elements: ["🪔", "🥖", "🌶️", "🧶"]
+  },
   700: {
     name: "Mountain Majesty",
     gradient: "from-slate-100 via-slate-400 to-slate-700",
     accent: "#1F2937",
     text: "text-slate-900",
     secondaryText: "text-slate-600",
-    animationType: AnimationType.BOUNCE,
+    animationType: AnimationType.SLIDE,
     elements: ["🏔️", "❄️", "🦅", "☁️", "🎿"]
+  },
+  750: {
+    name: "Highland Mist",
+    gradient: "from-gray-300 via-slate-400 to-zinc-600",
+    accent: "#f1f5f9",
+    text: "text-slate-50",
+    secondaryText: "text-slate-300",
+    animationType: AnimationType.BLUR,
+    elements: ["🐐", "🧣", "🌫️", "🧗"]
   },
   800: {
     name: "New Horizon",
@@ -83,6 +154,15 @@ export const THEMES: Record<number, ThemeConfig> = {
     animationType: AnimationType.SPIRAL,
     elements: ["📚", "💻", "✏️", "🎒", "💡"]
   },
+  850: {
+    name: "Digital Future",
+    gradient: "from-cyan-400 via-blue-500 to-indigo-600",
+    accent: "#ffffff",
+    text: "text-white",
+    secondaryText: "text-cyan-100",
+    animationType: AnimationType.ZOOM,
+    elements: ["📡", "🛰️", "🧪", "⚙️"]
+  },
   900: {
     name: "Victory Celebration",
     gradient: "from-yellow-400 via-amber-500 to-red-600",
@@ -91,15 +171,33 @@ export const THEMES: Record<number, ThemeConfig> = {
     secondaryText: "text-amber-900",
     animationType: AnimationType.CELEBRATE,
     elements: ["🎉", "🔥", "🎖️", "🦁", "🏆"]
+  },
+  950: {
+    name: "Ultimate Prize",
+    gradient: "from-yellow-300 via-yellow-500 to-yellow-700",
+    accent: "#451a03",
+    text: "text-amber-950",
+    secondaryText: "text-amber-800",
+    animationType: AnimationType.POP,
+    elements: ["👑", "💎", "🎊", "🎺"]
+  },
+  1000: {
+    name: "Beyond Limits",
+    gradient: "from-black via-slate-900 to-black",
+    accent: "#ffffff",
+    text: "text-white",
+    secondaryText: "text-white/50",
+    animationType: AnimationType.CELEBRATE,
+    elements: ["🚀", "🪐", "🌍", "✨"]
   }
 };
 
 export const getTheme = (count: number): ThemeConfig => {
-  const floor = Math.min(900, Math.floor(count / 100) * 100);
+  const floor = Math.min(1000, Math.floor(count / 50) * 50);
   return THEMES[floor] || THEMES[0];
 };
 
 export const BUILD_INFO = {
-  number: "2.1.0-STABLE",
+  number: "2.6.0-JOYFUL",
   timestamp: new Date().toLocaleDateString()
 };

@@ -94,8 +94,11 @@ const VerseTracker: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [buildInfoVisible, setBuildInfoVisible] = useState(true);
+  const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
+  const [timerAlert, setTimerAlert] = useState(false);
   
   const countRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<HTMLDivElement>(null);
   const theme = THEMES[getThemeForCount(count)];
 
   // Persistence
@@ -108,6 +111,42 @@ const VerseTracker: React.FC = () => {
     const timer = setTimeout(() => setBuildInfoVisible(false), 8000);
     return () => clearTimeout(timer);
   }, [isStarted]);
+
+  // Countdown Logic
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      let target = new Date();
+      target.setHours(18, 30, 0, 0); // 6:30 PM
+
+      // If it's already past 6:30 PM, set target for tomorrow
+      if (now.getTime() > target.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      const diff = target.getTime() - now.getTime();
+      
+      if (diff <= 1000 && diff > 0) {
+        // Trigger alert at zero
+        setTimerAlert(true);
+        playMilestone();
+        gsap.to(document.body, { backgroundColor: '#FFD700', duration: 0.5, yoyo: true, repeat: 3 });
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const interval = setInterval(() => {
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const triggerAnimation = useCallback((type: 'fall' | 'slide' | 'pop' | 'flash') => {
     if (!countRef.current) return;
@@ -210,6 +249,11 @@ const VerseTracker: React.FC = () => {
     setIsStarted(true);
     setBuildInfoVisible(false);
     triggerAnimation(theme.animation);
+    
+    // Animate timer in
+    if (timerRef.current) {
+      gsap.fromTo(timerRef.current, { y: -50, opacity: 0 }, { y: 0, opacity: 1, delay: 1, duration: 1, ease: "power2.out" });
+    }
   };
 
   return (
@@ -239,6 +283,30 @@ const VerseTracker: React.FC = () => {
         opacity: 0.4
       }} />
 
+      {/* Countdown Timer */}
+      <div 
+        ref={timerRef}
+        style={{
+          position: 'absolute',
+          top: '40px',
+          right: '40px',
+          background: 'rgba(0,0,0,0.3)',
+          padding: '15px 30px',
+          borderRadius: '15px',
+          backdropFilter: 'blur(10px)',
+          border: `2px solid ${theme.accent}`,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          zIndex: 200,
+          textAlign: 'right',
+          opacity: 0 // Animate in on start
+        }}
+      >
+        <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, fontWeight: 700 }}>Next Session In</div>
+        <div style={{ fontSize: '2.5rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.05em' }}>
+          {timeLeft}
+        </div>
+      </div>
+
       {/* Build Info Overlay */}
       {buildInfoVisible && (
         <div style={{
@@ -255,7 +323,7 @@ const VerseTracker: React.FC = () => {
           textTransform: 'uppercase',
           letterSpacing: '0.1em'
         }}>
-          LIVE FEED // BUILD 2.1.0 // {new Date().toLocaleTimeString()}
+          LIVE FEED // BUILD 2.2.0 // {new Date().toLocaleTimeString()}
         </div>
       )}
 
@@ -325,6 +393,30 @@ const VerseTracker: React.FC = () => {
         Verses Recited
       </div>
 
+      {/* Timer Alert Overlay */}
+      {timerAlert && (
+        <div 
+          onClick={() => setTimerAlert(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(255, 215, 0, 0.95)',
+            zIndex: 2000,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            textAlign: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ fontSize: '10rem' }}>🔔</div>
+          <h1 style={{ color: '#000', fontSize: '6rem', fontWeight: 900 }}>IT'S TIME!</h1>
+          <p style={{ color: '#000', fontSize: '2rem', fontWeight: 700 }}>The 6:30 PM Session is Starting Now</p>
+          <div style={{ marginTop: '2rem', padding: '10px 40px', background: '#000', color: '#fff', borderRadius: '30px', fontWeight: 900 }}>CLICK TO DISMISS</div>
+        </div>
+      )}
+
       {/* Start Overlay */}
       {!isStarted && (
         <div style={{
@@ -340,7 +432,7 @@ const VerseTracker: React.FC = () => {
           backdropFilter: 'blur(10px)'
         }}>
           <h1 style={{ color: '#FFD700', fontSize: '4rem', marginBottom: '1rem', fontWeight: 900 }}>AWANA AFRICA</h1>
-          <h2 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '3rem', opacity: 0.8 }}>SCHOOLS VERSE TRACKER v2.1</h2>
+          <h2 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '3rem', opacity: 0.8 }}>SCHOOLS VERSE TRACKER v2.2</h2>
           <button 
             onClick={startBroadcast}
             style={{

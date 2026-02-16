@@ -1,5 +1,12 @@
 # Change Log - Awana Verse Tracker
 
+## [2.2.0] - 2024-05-21
+### Added
+- **Countdown Timer**: High-visibility countdown targeting 6:30 PM local time.
+- **Dynamic Animation**: Timer fades in with GSAP upon broadcast initialization.
+- **Zero-Trigger Alert**: Full-screen notification and audio milestone fanfare when countdown hits zero.
+- **Broadcast Polish**: Refined layout to accommodate timer without distracting from the main counter.
+
 ## [2.1.0] - 2024-05-20
 ### Added
 - Unique GSAP entry animations for each 100-verse theme block (Fall, Slide, Pop, Flash).

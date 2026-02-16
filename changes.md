@@ -1,8 +1,11 @@
-# Version 2.6.0 - Joyful Noise
+# Version 3.0.1 - HOTFIX
 
-- **Shockwave Ripple FX**: Subtle visual shockwaves blast from the number on every increment.
-- **Joyful Noise Engine**: Enhanced procedural sounds (pops for every verse, triumphant chords for milestones).
-- **Infinite Themes**: Added 20+ custom themes for every 50 verses up to 1000.
-- **Clean UI Redesign**: Removed all theme labels and footer text post-engagement for a pure broadcast look.
-- **Stabilization**: Fixed 'all black' screen issue by correcting ESM import paths and React 19 initialization.
-- **Admin Visibility**: Reduced admin gear opacity to 0.05 (almost invisible) unless hovered.
+- **CRITICAL FIX**: Resolved "Minified React error #31" by removing duplicate React 19 entries from the import map. The app now strictly enforces React 18.3.1 to ensure the P2P engine and UI components share the same runtime instance.
+
+# Version 3.0.0 - "Global Link"
+
+- **ARCHITECTURE OVERHAUL**: Implemented `PeerJS` (WebRTC) for serverless multi-computer syncing.
+- **Laptop/Projector Mode**: Distinct startup modes for "Controller" and "Display".
+- **Room Codes**: Users can set a custom "Room Code" to pair devices securely over the web.
+- **UI Update**: Added a sleek "Connection Setup" screen.
+- **Audio Logic**: Added a specific "Enable Sound" overlay for the Display machine to comply with browser policies.

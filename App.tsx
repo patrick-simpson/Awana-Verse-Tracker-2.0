@@ -1,14 +1,124 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { ref, onValue, set, off } from 'firebase/database';
-import { db } from './firebase.ts';
 import { getTheme, BUILD_INFO } from './constants.tsx';
 import { initAudio, playPop, playMilestone } from './utils/audio.ts';
 import { AnimationType } from './types.ts';
+import Peer from 'peerjs';
+
+// --- P2P SYNC ENGINE (WebRTC) ---
+// Syncs two computers (Controller & Display) via PeerJS public servers.
+type Role = 'setup' | 'host' | 'client';
+type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+const usePeerSync = () => {
+  const [role, setRole] = useState<Role>('setup');
+  const [roomCode, setRoomCode] = useState('AWANA');
+  const [count, setCount] = useState(0);
+  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const peerRef = useRef<Peer | null>(null);
+  const connRef = useRef<any>(null);
+
+  // HOST: Create the room
+  const startHost = (code: string) => {
+    setRoomCode(code);
+    setRole('host');
+    setStatus('connecting');
+
+    // Create a predictable ID: awana-host-[CODE]
+    // Clean code to be alphanumeric only
+    const cleanCode = code.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const hostId = `awana-host-${cleanCode}`;
+    
+    const peer = new Peer(hostId);
+    peerRef.current = peer;
+
+    peer.on('open', (id) => {
+      console.log('Host initialized:', id);
+      setStatus('connected');
+    });
+
+    peer.on('connection', (conn) => {
+      console.log('Client connected');
+      connRef.current = conn;
+      // Send current state immediately upon connection
+      setTimeout(() => {
+        conn.send({ type: 'SYNC', value: count });
+      }, 500);
+    });
+
+    peer.on('error', (err) => {
+      console.error('Peer error:', err);
+      if (err.type === 'unavailable-id') {
+         // If ID is taken, we might need to reconnect or just assume we are the owner
+         setStatus('connected'); 
+      } else {
+         setStatus('error');
+      }
+    });
+  };
+
+  // CLIENT: Connect to the room
+  const startClient = (code: string) => {
+    setRoomCode(code);
+    setRole('client');
+    setStatus('connecting');
+
+    const cleanCode = code.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const hostId = `awana-host-${cleanCode}`;
+    
+    // Random ID for client
+    const peer = new Peer();
+    peerRef.current = peer;
+
+    peer.on('open', () => {
+      connectToHost(peer, hostId);
+    });
+
+    peer.on('error', (err) => {
+      console.error('Client Peer error:', err);
+      setStatus('error');
+    });
+  };
+
+  const connectToHost = (peer: Peer, hostId: string) => {
+    console.log('Connecting to:', hostId);
+    const conn = peer.connect(hostId, { reliable: true });
+    connRef.current = conn;
+
+    conn.on('open', () => {
+      console.log('Connected to Host');
+      setStatus('connected');
+    });
+
+    conn.on('data', (data: any) => {
+      if (data && data.type === 'SYNC') {
+        setCount(data.value);
+      }
+    });
+
+    conn.on('close', () => {
+      setStatus('disconnected');
+      // Simple retry logic
+      setTimeout(() => connectToHost(peer, hostId), 3000);
+    });
+  };
+
+  // BROADCAST: Host sends updates
+  const updateCount = (newVal: number) => {
+    const val = Math.max(0, newVal);
+    setCount(val);
+    
+    if (role === 'host' && connRef.current && connRef.current.open) {
+      connRef.current.send({ type: 'SYNC', value: val });
+    }
+  };
+
+  return { role, setRole, roomCode, setRoomCode, count, updateCount, status, startHost, startClient };
+};
 
 const AdminPanel: React.FC<{ current: number; onUpdate: (n: number) => void; onClose: () => void }> = ({ current, onUpdate, onClose }) => {
   const [val, setVal] = useState('');
   return (
-    <div className="absolute bottom-20 right-0 w-80 glass-panel rounded-3xl p-6 text-white shadow-2xl z-[150]">
+    <div className="absolute bottom-20 right-0 w-80 glass-panel rounded-3xl p-6 text-white shadow-2xl z-[150] animate-[fadeIn_0.2s_ease-out]">
       <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
         <h3 className="text-xl font-black uppercase tracking-widest text-yellow-400">Broadcast Desk</h3>
         <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">✕</button>
@@ -32,155 +142,158 @@ const AdminPanel: React.FC<{ current: number; onUpdate: (n: number) => void; onC
           Update Count
         </button>
       </div>
-      <button 
-        onClick={() => { if(confirm("Reset everything?")) onUpdate(0); }}
-        className="w-full mt-4 text-red-400 hover:text-red-300 text-[10px] font-black uppercase tracking-widest"
-      >
-        Danger: Reset to Zero
-      </button>
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <button 
+            onClick={() => { if(confirm("Reset everything?")) onUpdate(0); }}
+            className="w-full text-red-400 hover:text-red-300 text-[10px] font-black uppercase tracking-widest"
+        >
+            Danger: Reset to Zero
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const SetupScreen: React.FC<{ onHost: (code: string) => void; onClient: (code: string) => void }> = ({ onHost, onClient }) => {
+  const [code, setCode] = useState('AWANA');
+  
+  return (
+    <div className="fixed inset-0 bg-stone-900 flex flex-col items-center justify-center text-white z-[200]">
+      <div className="max-w-md w-full p-8 glass-panel border border-white/10 rounded-3xl text-center">
+        <h1 className="text-4xl font-black text-yellow-400 mb-2 uppercase italic tracking-tighter">Awana Sync</h1>
+        <p className="text-stone-400 text-sm mb-8 tracking-widest uppercase">Multi-Computer Uplink</p>
+        
+        <div className="mb-8">
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-stone-500">Room Code</label>
+            <input 
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                className="w-full bg-black/50 border-2 border-white/20 rounded-xl py-4 text-center text-2xl font-mono tracking-[0.5em] text-white focus:border-yellow-400 outline-none transition-colors"
+            />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+            <button onClick={() => onHost(code)} className="group bg-yellow-400 hover:bg-yellow-300 text-stone-900 py-4 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95">
+                <span className="block text-lg">Start Controller</span>
+                <span className="text-[10px] opacity-60">For the Laptop (Admin)</span>
+            </button>
+            <button onClick={() => onClient(code)} className="group bg-stone-800 hover:bg-stone-700 text-white py-4 rounded-xl font-black uppercase tracking-widest transition-all active:scale-95">
+                <span className="block text-lg">Start Display</span>
+                <span className="text-[10px] opacity-60">For the Projector</span>
+            </button>
+        </div>
+        
+        <div className="mt-8 text-[10px] text-stone-600 font-mono">
+            SECURE P2P CONNECTION // NO SERVER REQUIRED
+        </div>
+      </div>
     </div>
   );
 };
 
 const App: React.FC = () => {
-  const [count, setCount] = useState<number>(0);
-  const [isOffline, setIsOffline] = useState<boolean>(false);
-  const [isStarted, setIsStarted] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const { role, roomCode, count, updateCount, status, startHost, startClient } = usePeerSync();
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<(HTMLDivElement | null)[]>([]);
-  const prevCount = useRef<number>(0);
+  const prevCount = useRef<number>(count);
   const theme = useMemo(() => getTheme(count), [count]);
 
+  // Audio Auto-Start logic
   useEffect(() => {
-    if (!db) {
-      setIsOffline(true);
-      return;
+    // If we are Display and connected, we want audio
+    if (role === 'client' && status === 'connected' && !audioEnabled) {
+        // We can't auto-play audio without interaction usually, 
+        // but let's try or show a "Click to Enable Audio" button
     }
-    const countRef = ref(db, 'verseCount/current');
-    const unsubscribe = onValue(countRef, (snap) => {
-      const val = snap.val();
-      if (val !== null) setCount(Number(val));
-      setIsOffline(false);
-    }, (err) => {
-      console.error("Firebase Sync Error:", err);
-      setIsOffline(true);
-    });
-    return () => off(countRef);
-  }, []);
+  }, [role, status, audioEnabled]);
 
   // Background GSAP Animations
   useEffect(() => {
     const gsap = (window as any).gsap;
-    if (!gsap || particlesRef.current.length === 0) return;
+    if (!gsap) return;
 
-    const currentParticles = particlesRef.current;
-    currentParticles.forEach((el, i) => {
-      if (!el) return;
-      
-      gsap.killTweensOf(el);
-
-      const type = i % 3;
-      if (type === 0) {
-        gsap.to(el, {
-          x: "random(-40, 40)",
-          y: "random(-40, 40)",
-          duration: "random(8, 15)",
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut"
-        });
-      } else if (type === 1) {
-        gsap.to(el, {
-          scale: 1.2,
-          rotation: "random(-45, 45)",
-          duration: "random(4, 7)",
-          repeat: -1,
-          yoyo: true,
-          ease: "power1.inOut"
-        });
-      } else {
-        gsap.to(el, {
-          rotation: 360,
-          duration: "random(20, 40)",
-          repeat: -1,
-          ease: "none"
-        });
-      }
+    particlesRef.current.forEach(el => {
+       if(el) gsap.killTweensOf(el);
     });
 
-    return () => {
-      currentParticles.forEach(el => el && gsap.killTweensOf(el));
-    };
-  }, [theme, isStarted]);
+    if (particlesRef.current.length > 0) {
+        particlesRef.current.forEach((el, i) => {
+          if (!el) return;
+          const type = i % 3;
+          if (type === 0) {
+            gsap.to(el, { x: "random(-60, 60)", y: "random(-60, 60)", duration: "random(10, 20)", repeat: -1, yoyo: true, ease: "sine.inOut" });
+          } else if (type === 1) {
+            gsap.to(el, { scale: 1.3, rotation: "random(-90, 90)", duration: "random(5, 10)", repeat: -1, yoyo: true, ease: "power1.inOut" });
+          } else {
+            gsap.to(el, { rotation: 360, duration: "random(30, 60)", repeat: -1, ease: "none" });
+          }
+        });
+    }
+  }, [theme]);
 
+  // Count Change Effects
   useEffect(() => {
-    if (count !== prevCount.current && isStarted) {
-      if (count > 0 && count % 50 === 0) playMilestone();
-      else playPop();
+    if (count !== prevCount.current) {
+      if (audioEnabled) {
+        if (count > prevCount.current) {
+            if (count > 0 && count % 50 === 0) playMilestone();
+            else playPop();
+        }
+      }
 
       const gsap = (window as any).gsap;
-      if (gsap) {
+      if (gsap && containerRef.current && numberRef.current) {
+        // Ripple FX
         const ripple = document.createElement('div');
         ripple.className = 'ripple-effect';
-        const size = 100;
-        ripple.style.width = ripple.style.height = `${size}px`;
-        ripple.style.left = `calc(50% - ${size/2}px)`;
-        ripple.style.top = `calc(50% - ${size/2}px)`;
-        containerRef.current?.appendChild(ripple);
+        ripple.style.width = ripple.style.height = `150px`;
+        ripple.style.left = `50%`;
+        ripple.style.top = `50%`;
+        ripple.style.transform = `translate(-50%, -50%)`;
+        containerRef.current.appendChild(ripple);
 
         gsap.to(ripple, {
-          scale: 15,
-          opacity: 0,
-          borderWidth: 0,
-          duration: 1,
-          ease: "power2.out",
-          onComplete: () => ripple.remove()
+          scale: 20, opacity: 0, borderWidth: 0, duration: 1.2,
+          ease: "power2.out", onComplete: () => ripple.remove()
         });
 
-        if (numberRef.current) {
-          const tl = gsap.timeline();
-          switch (theme.animationType) {
-            case AnimationType.FALL:
-              tl.fromTo(numberRef.current, { y: -300, opacity: 0, scale: 0.5 }, { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: "bounce.out" });
-              break;
-            case AnimationType.POP:
-              tl.fromTo(numberRef.current, { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(2)" });
-              break;
-            case AnimationType.SLIDE:
-              tl.fromTo(numberRef.current, { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power4.out" });
-              break;
-            case AnimationType.BOUNCE:
-              tl.fromTo(numberRef.current, { y: 200, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "bounce.out" });
-              break;
-            case AnimationType.CELEBRATE:
-              tl.fromTo(numberRef.current, { scale: 1.5, filter: "brightness(3)" }, { scale: 1, filter: "brightness(1)", duration: 1, ease: "elastic.out(1, 0.3)" });
-              gsap.to(containerRef.current, { backgroundColor: "#fff", duration: 0.1, repeat: 3, yoyo: true });
-              break;
-            case AnimationType.WAVE:
-              tl.fromTo(numberRef.current, { x: -300, rotation: -15, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, duration: 0.7, ease: "back.out" });
-              break;
-            case AnimationType.ZOOM:
-              tl.fromTo(numberRef.current, { scale: 5, opacity: 0, filter: "blur(20px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.5 });
-              break;
-            default:
-              tl.fromTo(numberRef.current, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4 });
-          }
+        // Number Anim
+        const tl = gsap.timeline();
+        gsap.set(numberRef.current, { clearProps: "all" });
+        
+        switch (theme.animationType) {
+          case AnimationType.FALL:
+            tl.fromTo(numberRef.current, { y: -300, opacity: 0, scale: 0.5 }, { y: 0, opacity: 1, scale: 1, duration: 0.8, ease: "bounce.out" });
+            break;
+          case AnimationType.POP:
+            tl.fromTo(numberRef.current, { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(2)" });
+            break;
+          case AnimationType.SLIDE:
+            tl.fromTo(numberRef.current, { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power4.out" });
+            break;
+          case AnimationType.CELEBRATE:
+            tl.fromTo(numberRef.current, { scale: 1.5, filter: "brightness(3)" }, { scale: 1, filter: "brightness(1)", duration: 1, ease: "elastic.out(1, 0.3)" });
+            gsap.to(containerRef.current, { backgroundColor: "#fff", duration: 0.1, repeat: 3, yoyo: true });
+            break;
+          default:
+            tl.fromTo(numberRef.current, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4 });
         }
       }
       prevCount.current = count;
     }
-  }, [count, isStarted, theme.animationType]);
+  }, [count, theme.animationType, audioEnabled]);
 
-  const handleUpdate = (newVal: number) => {
-    if (db) set(ref(db, 'verseCount/current'), Math.max(0, newVal));
-    else setCount(Math.max(0, newVal));
-  };
+  if (role === 'setup') {
+    return <SetupScreen onHost={startHost} onClient={startClient} />;
+  }
 
   return (
     <div ref={containerRef} className={`relative w-full h-screen transition-all duration-1000 bg-gradient-to-br ${theme.gradient} flex items-center justify-center overflow-hidden`}>
+      {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         {Array.from({length: 15}).map((_, i) => (
           <div 
@@ -188,10 +301,8 @@ const App: React.FC = () => {
             ref={el => { particlesRef.current[i] = el; }}
             className="absolute"
             style={{ 
-              left: `${(i * 13) % 100}%`, 
-              top: `${(i * 21) % 100}%`,
-              fontSize: `${40 + (i % 5) * 20}px`,
-              willChange: "transform"
+              left: `${(i * 13) % 100}%`, top: `${(i * 21) % 100}%`,
+              fontSize: `${40 + (i % 5) * 20}px`, willChange: "transform"
             }}
           >
             {theme.elements[i % theme.elements.length]}
@@ -199,9 +310,23 @@ const App: React.FC = () => {
         ))}
       </div>
 
+      {/* Main Display */}
       <div className="z-10 text-center relative">
         <div className="relative inline-block">
-          <div className="relative px-12 md:px-20 py-10 rounded-[5rem] glass-panel border-4 border-white/20 shadow-2xl overflow-hidden">
+            {/* Status Indicator for Admin */}
+            {role === 'host' && (
+                <div className={`absolute -top-12 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-widest ${status === 'connected' ? 'text-green-400' : 'text-red-400'} animate-pulse`}>
+                    CONTROLLER: {status} [{roomCode}]
+                </div>
+            )}
+             {/* Status Indicator for Display */}
+             {role === 'client' && (
+                <div className={`absolute -top-12 left-1/2 -translate-x-1/2 text-[10px] font-mono uppercase tracking-widest ${status === 'connected' ? 'text-green-400' : 'text-red-400'}`}>
+                    DISPLAY: {status}
+                </div>
+            )}
+
+          <div className="relative px-12 md:px-20 py-10 rounded-[5rem] glass-panel border-4 border-white/20 shadow-2xl overflow-hidden min-w-[300px]">
             <div 
               ref={numberRef}
               className={`text-[35vw] md:text-[25vw] leading-none font-[900] text-outline ${theme.text} select-none drop-shadow-2xl`}
@@ -212,48 +337,37 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Progress Bar */}
         <div className="mt-8">
             <div className={`h-1.5 w-48 bg-white/10 rounded-full mx-auto overflow-hidden`}>
-                <div 
-                    className="h-full bg-yellow-400 transition-all duration-700"
-                    style={{ width: `${(count % 50) / 50 * 100}%` }}
-                ></div>
+                <div className="h-full bg-yellow-400 transition-all duration-700" style={{ width: `${(count % 50) / 50 * 100}%` }}></div>
             </div>
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-[120]">
+      {/* Audio Init for Display */}
+      {role === 'client' && !audioEnabled && (
         <button 
-          onClick={() => setIsAdmin(!isAdmin)}
-          className="p-3 text-white opacity-[0.05] hover:opacity-100 transition-all duration-500 bg-black/20 hover:bg-black/60 rounded-full focus:outline-none"
+            onClick={() => { initAudio(); setAudioEnabled(true); }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[300] bg-yellow-400 text-black px-8 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl animate-bounce"
         >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
+            Click to Enable Sound
         </button>
-        {isAdmin && <AdminPanel current={count} onUpdate={handleUpdate} onClose={() => setIsAdmin(false)} />}
-      </div>
+      )}
 
-      {!isStarted && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-900/98 backdrop-blur-2xl text-center">
-          <div className="p-12 glass-panel border-4 border-yellow-400 rounded-[3.5rem] max-w-lg shadow-[0_0_100px_rgba(250,204,21,0.2)] relative">
-            <h1 className="text-6xl font-black text-white mb-4 uppercase tracking-tighter italic drop-shadow-lg">Awana Africa</h1>
-            <p className="text-stone-300 mb-10 font-bold tracking-widest text-sm uppercase opacity-70">Schools Verse Tracker</p>
-            
-            <button
-              onClick={() => { initAudio(); setIsStarted(true); }}
-              className="group relative bg-yellow-400 hover:bg-white text-stone-900 font-black py-8 px-24 rounded-full text-3xl shadow-[0_12px_0_rgb(180,130,0)] hover:translate-y-2 transition-all active:scale-95 uppercase tracking-tighter"
+      {/* Admin Controls (Only for Host) */}
+      {role === 'host' && (
+        <div className="fixed bottom-6 right-6 z-[120]">
+            <button 
+            onClick={() => setIsAdminOpen(!isAdminOpen)}
+            className="p-3 text-white opacity-20 hover:opacity-100 transition-all duration-500 bg-black/20 hover:bg-black/60 rounded-full"
             >
-              Start Broadcast
-              <div className="absolute -inset-2 bg-yellow-400 opacity-20 blur-xl group-hover:opacity-40 transition-opacity rounded-full"></div>
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
             </button>
-
-            <div className="mt-12 pt-8 border-t border-white/10 text-[11px] text-white/30 font-mono tracking-widest uppercase flex flex-col gap-1">
-              <span>{BUILD_INFO.number} // RELEASED {BUILD_INFO.timestamp}</span>
-              <span>{isOffline ? 'CACHE_MODE' : 'CLOUD_SYNC_ENABLED'}</span>
-            </div>
-          </div>
+            {isAdminOpen && <AdminPanel current={count} onUpdate={updateCount} onClose={() => setIsAdminOpen(false)} />}
         </div>
       )}
     </div>

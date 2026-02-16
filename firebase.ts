@@ -1,5 +1,5 @@
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApp, getApps } from "firebase/app";
 import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
@@ -16,11 +16,15 @@ const firebaseConfig = {
 let db: Database | null = null;
 
 try {
-  const app = initializeApp(firebaseConfig);
+  // Check if Firebase is already initialized to avoid duplicate app errors
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  
+  // Explicitly passing the app instance to getDatabase ensures the service registers correctly
   db = getDatabase(app);
-  console.log("Firebase initialized");
+  
+  console.log("Firebase Database initialized successfully");
 } catch (e) {
-  console.error("Firebase initialization failed:", e);
+  console.error("Firebase initialization failed in firebase.ts:", e);
 }
 
 export { db };

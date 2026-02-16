@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Awana Africa Tracker</title>
+    <title>Awana Africa Tracker | Broadcast Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,53 +12,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Nunito', sans-serif;
-            background-color: #1a1a1a;
-        }
-        .text-outline {
-            -webkit-text-stroke: 3px rgba(0,0,0,0.15);
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-        }
-        .floating {
-            animation: float 6s ease-in-out infinite;
-        }
+        body { margin: 0; overflow: hidden; font-family: 'Nunito', sans-serif; background-color: #1a1a1a; }
+        .text-outline { -webkit-text-stroke: 3px rgba(0,0,0,0.15); }
+        .glass-panel { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } 100% { transform: translateY(0px) rotate(0deg); } }
+        .floating { animation: float 6s ease-in-out infinite; }
         #root:empty::after {
-            content: 'BOOTING BROADCAST SYSTEM...';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #FBBF24;
-            font-weight: 900;
-            letter-spacing: 0.3em;
-            font-size: 0.75rem;
-            animation: pulse 2s infinite;
+            content: 'INITIALIZING BROADCAST GRAPHICS...';
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #FBBF24; font-weight: 900; letter-spacing: 0.3em; font-size: 0.8rem; animation: pulse 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "firebase/app": "https://esm.sh/firebase@11.1.0/app",
-    "firebase/database": "https://esm.sh/firebase@11.1.0/database",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "firebase/": "https://esm.sh/firebase@^12.9.0/"
@@ -68,9 +40,136 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- Babel configuration for TSX -->
-    <script type="text/babel" data-type="module" data-presets="typescript,react">
-        import './index.tsx';
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom';
+        import { initializeApp, getApps, getApp } from 'firebase/app';
+        import { getDatabase, ref, onValue, set, off } from 'firebase/database';
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCk0TR4SUFUvsdpIDGmH-0CzbZQQcZBL30",
+            authDomain: "awana-africa-tracker.firebaseapp.com",
+            databaseURL: "https://awana-africa-tracker-default-rtdb.firebaseio.com",
+            projectId: "awana-africa-tracker",
+            storageBucket: "awana-africa-tracker.firebasestorage.app",
+            messagingSenderId: "825987576771",
+            appId: "1:825987576771:web:f293d618dad3ded2c70376"
+        };
+
+        const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+        const db = getDatabase(app);
+
+        // --- Theme Engine ---
+        const THEMES = {
+            0: { name: "Sunrise Savanna", gradient: "from-orange-500 to-yellow-500", text: "text-white", sec: "text-orange-950", elements: ["☀️", "🦒", "🐘"] },
+            100: { name: "Village Map", gradient: "from-amber-800 to-stone-900", text: "text-stone-100", sec: "text-amber-400", elements: ["🗺️", "🛖", "🥁"] },
+            200: { name: "Building School", gradient: "from-teal-600 to-emerald-900", text: "text-white", sec: "text-teal-200", elements: ["🏫", "🔨", "🧱"] },
+            300: { name: "Jungle Growth", gradient: "from-green-700 to-black", text: "text-lime-200", sec: "text-green-400", elements: ["🌿", "🦜", "🐒"] },
+            500: { name: "Great River", gradient: "from-blue-600 to-indigo-900", text: "text-white", sec: "text-blue-200", elements: ["🌊", "🛶", "🐟"] }
+        };
+
+        const getActiveTheme = (count) => {
+            const keys = Object.keys(THEMES).map(Number).sort((a,b) => b-a);
+            const key = keys.find(k => count >= k) || 0;
+            return THEMES[key];
+        };
+
+        // --- Audio Utils ---
+        let audioCtx = null;
+        const playPop = () => {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            const [count, setCount] = useState(0);
+            const [isStarted, setIsStarted] = useState(false);
+            const [isAdmin, setIsAdmin] = useState(false);
+            const prevCount = useRef(0);
+            const numberRef = useRef(null);
+            const theme = getActiveTheme(count);
+
+            useEffect(() => {
+                const countRef = ref(db, 'verseCount/current');
+                onValue(countRef, (snap) => {
+                    const val = snap.val();
+                    if (val !== null) setCount(Number(val));
+                });
+            }, []);
+
+            useEffect(() => {
+                if (count !== prevCount.current) {
+                    if (isStarted) playPop();
+                    if (numberRef.current && window.gsap) {
+                        window.gsap.fromTo(numberRef.current, 
+                            { scale: 0.5, opacity: 0, y: -50 }, 
+                            { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
+                        );
+                    }
+                    prevCount.current = count;
+                }
+            }, [count, isStarted]);
+
+            const updateCount = (newVal) => set(ref(db, 'verseCount/current'), newVal);
+
+            return (
+                <div className={`w-full h-screen bg-gradient-to-br ${theme.gradient} flex items-center justify-center transition-colors duration-1000`}>
+                    
+                    {/* Whimsy elements */}
+                    <div className="absolute inset-0 pointer-events-none opacity-20">
+                        {theme.elements.map((el, i) => (
+                            <div key={i} className="absolute floating text-8xl" style={{ left: `${20+i*30}%`, top: `${20+i*20}%`, animationDelay: `${i}s` }}>{el}</div>
+                        ))}
+                    </div>
+
+                    <div className="z-10 text-center">
+                        <h2 className={`uppercase font-black text-2xl mb-4 tracking-[0.3em] ${theme.sec}`}>{theme.name}</h2>
+                        <div className="glass-panel px-16 py-10 rounded-[4rem] shadow-2xl">
+                            <div ref={numberRef} className={`text-[25vw] font-[900] text-outline leading-none ${theme.text}`}>{count}</div>
+                        </div>
+                        <div className="mt-12 text-white/50 font-mono text-xs tracking-widest">LIVE BROADCAST FEED // RECOVERY ACTIVE</div>
+                    </div>
+
+                    {/* Admin Toggle */}
+                    <div className="fixed bottom-6 right-6">
+                        <button onClick={() => setIsAdmin(!isAdmin)} className="p-3 text-white opacity-10 hover:opacity-100 transition-opacity">⚙️</button>
+                        {isAdmin && (
+                            <div className="absolute bottom-16 right-0 w-64 glass-panel p-6 rounded-3xl text-white">
+                                <h3 className="font-black mb-4 text-yellow-400">ADMIN CONTROL</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button onClick={() => updateCount(count + 1)} className="bg-white/10 p-3 rounded-xl font-bold">+1</button>
+                                    <button onClick={() => updateCount(count + 5)} className="bg-white/10 p-3 rounded-xl font-bold">+5</button>
+                                </div>
+                                <button onClick={() => updateCount(0)} className="w-full mt-4 text-red-400 text-xs font-bold uppercase">Reset All</button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Start Overlay */}
+                    {!isStarted && (
+                        <div className="fixed inset-0 z-50 bg-stone-900/95 flex items-center justify-center text-center">
+                            <div className="p-12 glass-panel border-2 border-yellow-400 rounded-[3rem]">
+                                <h1 className="text-4xl font-black text-white mb-8 tracking-tighter">AWANA AFRICA LIVE</h1>
+                                <button onClick={() => { audioCtx = new AudioContext(); setIsStarted(true); }} className="bg-yellow-400 text-stone-900 font-black py-5 px-12 rounded-full text-xl hover:scale-105 active:scale-95 transition-all">START BROADCAST</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>

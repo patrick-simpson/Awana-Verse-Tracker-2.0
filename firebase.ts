@@ -1,10 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, set } from "firebase/database";
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { getDatabase, ref, onValue, set, DatabaseReference } from "firebase/database";
 
-/**
- * Firebase initialization using the modular SDK.
- * Configured with the project's specific credentials for Awana Africa.
- */
 const firebaseConfig = {
   apiKey: "AIzaSyCk0TR4SUFUvsdpIDGmH-0CzbZQQcZBL30",
   authDomain: "awana-africa-tracker.firebaseapp.com",
@@ -17,18 +13,15 @@ const firebaseConfig = {
 };
 
 let db: any = null;
-let verseRef: any = null;
+let verseRef: DatabaseReference | null = null;
 
 try {
-  const app = initializeApp(firebaseConfig);
-  // Get database instance using modular syntax
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   db = getDatabase(app);
-  // Export reference to 'verses' node specifically for this application
   verseRef = ref(db, 'verses');
-  console.log("Firebase initialized successfully");
+  console.log("Firebase Modular SDK initialized successfully");
 } catch (e) {
-  console.error("Firebase failed to load. Running in local offline mode.");
-  // Allow application to continue in offline/fallback mode
+  console.error("Firebase Initialization Failure:", e);
 }
 
 export { db, verseRef, onValue, set };

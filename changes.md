@@ -1,8 +1,6 @@
-# Version 3.5.0 - Broadcast Stability Fix
+# Version 3.5.2 - "Stability Recovery"
 
-- **CRITICAL**: Fixed 'Minified React error #31' by removing conflicting React 19 imports and pinning strictly to React 18.3.1.
-- **MIME Fix**: Consolidated all application logic into `index.tsx` to prevent `application/octet-stream` module loading errors common in some server environments.
-- **Firebase v8**: Switched to Firebase Compatibility SDK (v8) scripts in `index.html`. This ensures the SDK is available in the global window object, which is much more reliable for simple static-file deployments.
-- **Null Safety**: Implemented robust null-checking for the Firebase Realtime Database response.
-- **Error UI**: Added a dedicated 'Panic' screen for reporting critical initialization failures.
-- **Aesthetics**: Maintained the high-fidelity Africa-themed UI, GSAP animations, and audio milestones.
+- **FIXED**: Minified React Error #31. This was caused by the `importmap` containing overlapping mappings for React 18 and React 19. All mappings for React 19 have been removed to ensure version consistency.
+- **FIXED**: Firebase "Service database is not available" error. This was resolved by cleaning the `importmap` and ensuring the Modular Firebase SDK (v10.13.0) is initialized with proper dependency resolution.
+- **STABILITY**: Added defensive checks in `firebase.ts` to ensure the app doesn't attempt to re-initialize if an instance already exists.
+- **ERROR HANDLING**: Updated `App.tsx` with a robust error boundary UI to report connection or initialization failures directly on the screen for the broadcast team.

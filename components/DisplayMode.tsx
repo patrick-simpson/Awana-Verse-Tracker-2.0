@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { getTheme } from '../constants';
-import { playPop, playMilestone } from '../utils/audio';
-import { AnimationType } from '../types';
+import { getTheme } from '../constants.tsx';
+import { playPop, playMilestone } from '../utils/audio.ts';
+import { AnimationType } from '../types.ts';
 
 interface Props {
   count: number;
@@ -26,6 +26,7 @@ const DisplayMode: React.FC<Props> = ({ count, audioStarted }) => {
   })));
 
   useEffect(() => {
+    // Only animate if count actually changed
     if (count !== prevCount.current) {
       if (audioStarted) {
         if (count > 0 && count % 50 === 0) {
@@ -36,8 +37,9 @@ const DisplayMode: React.FC<Props> = ({ count, audioStarted }) => {
       }
 
       // Animate the number change based on theme type
-      if (numberRef.current) {
-        const tl = (window as any).gsap.timeline();
+      const gsap = (window as any).gsap;
+      if (numberRef.current && gsap) {
+        const tl = gsap.timeline();
         
         switch (theme.animationType) {
           case AnimationType.FALL:
@@ -60,7 +62,7 @@ const DisplayMode: React.FC<Props> = ({ count, audioStarted }) => {
             break;
           case AnimationType.CELEBRATE:
             tl.fromTo(numberRef.current, { scale: 0.5, y: 100 }, { scale: 1, y: 0, duration: 0.4, ease: "elastic.out(1, 0.3)" });
-            (window as any).gsap.to(containerRef.current, { backgroundColor: "#FFF", duration: 0.1, repeat: 3, yoyo: true });
+            gsap.to(containerRef.current, { backgroundColor: "#FFF", duration: 0.1, repeat: 3, yoyo: true });
             break;
           default:
             tl.fromTo(numberRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5 });
@@ -107,7 +109,6 @@ const DisplayMode: React.FC<Props> = ({ count, audioStarted }) => {
             {count}
           </div>
           
-          {/* Subtle Glow beneath the number */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[30vh] bg-white opacity-10 blur-[100px] rounded-full -z-10"></div>
         </div>
 

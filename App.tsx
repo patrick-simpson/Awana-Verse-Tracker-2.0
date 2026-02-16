@@ -76,15 +76,14 @@ const App: React.FC = () => {
     const gsap = (window as any).gsap;
     if (!gsap || particlesRef.current.length === 0) return;
 
-    particlesRef.current.forEach((el, i) => {
+    const currentParticles = particlesRef.current;
+    currentParticles.forEach((el, i) => {
       if (!el) return;
       
-      // Clear existing animations to prevent conflicts on theme change
       gsap.killTweensOf(el);
 
-      // Unique Whimsical Movements
       const type = i % 3;
-      if (type === 0) { // Drifting
+      if (type === 0) {
         gsap.to(el, {
           x: "random(-40, 40)",
           y: "random(-40, 40)",
@@ -93,7 +92,7 @@ const App: React.FC = () => {
           yoyo: true,
           ease: "sine.inOut"
         });
-      } else if (type === 1) { // Pulsing & Rotating
+      } else if (type === 1) {
         gsap.to(el, {
           scale: 1.2,
           rotation: "random(-45, 45)",
@@ -102,7 +101,7 @@ const App: React.FC = () => {
           yoyo: true,
           ease: "power1.inOut"
         });
-      } else { // Constant Rotation
+      } else {
         gsap.to(el, {
           rotation: 360,
           duration: "random(20, 40)",
@@ -111,17 +110,19 @@ const App: React.FC = () => {
         });
       }
     });
+
+    return () => {
+      currentParticles.forEach(el => el && gsap.killTweensOf(el));
+    };
   }, [theme, isStarted]);
 
   useEffect(() => {
     if (count !== prevCount.current && isStarted) {
-      // Sound feedback
       if (count > 0 && count % 50 === 0) playMilestone();
       else playPop();
 
       const gsap = (window as any).gsap;
       if (gsap) {
-        // 1. Shockwave Ripple
         const ripple = document.createElement('div');
         ripple.className = 'ripple-effect';
         const size = 100;
@@ -139,7 +140,6 @@ const App: React.FC = () => {
           onComplete: () => ripple.remove()
         });
 
-        // 2. Main Number Animation
         if (numberRef.current) {
           const tl = gsap.timeline();
           switch (theme.animationType) {
@@ -181,12 +181,10 @@ const App: React.FC = () => {
 
   return (
     <div ref={containerRef} className={`relative w-full h-screen transition-all duration-1000 bg-gradient-to-br ${theme.gradient} flex items-center justify-center overflow-hidden`}>
-      {/* Background Whimsy Particles with GSAP control */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         {Array.from({length: 15}).map((_, i) => (
           <div 
             key={i} 
-            // Fix: Ref callback must return void or a cleanup function. Ensure assignment doesn't return value.
             ref={el => { particlesRef.current[i] = el; }}
             className="absolute"
             style={{ 
@@ -214,7 +212,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Milestone Indicator - Subtle Whimsy Progress Bar */}
         <div className="mt-8">
             <div className={`h-1.5 w-48 bg-white/10 rounded-full mx-auto overflow-hidden`}>
                 <div 
@@ -225,11 +222,10 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Admin Button Layer (Very faint) */}
       <div className="fixed bottom-6 right-6 z-[120]">
         <button 
           onClick={() => setIsAdmin(!isAdmin)}
-          className="p-3 text-white opacity-[0.05] hover:opacity-100 transition-all duration-500 bg-black/20 hover:bg-black/60 rounded-full"
+          className="p-3 text-white opacity-[0.05] hover:opacity-100 transition-all duration-500 bg-black/20 hover:bg-black/60 rounded-full focus:outline-none"
         >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -239,7 +235,6 @@ const App: React.FC = () => {
         {isAdmin && <AdminPanel current={count} onUpdate={handleUpdate} onClose={() => setIsAdmin(false)} />}
       </div>
 
-      {/* Landing Splash Screen */}
       {!isStarted && (
         <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-stone-900/98 backdrop-blur-2xl text-center">
           <div className="p-12 glass-panel border-4 border-yellow-400 rounded-[3.5rem] max-w-lg shadow-[0_0_100px_rgba(250,204,21,0.2)] relative">

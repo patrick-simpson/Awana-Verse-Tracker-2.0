@@ -1,0 +1,7 @@
+{
+  "name": "Awana Africa Verse Tracker",
+  "description": "A high-fidelity broadcast tracker for the Awana Africa Schools Project featuring real-time syncing, dynamic theming, and GSAP-powered animations.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

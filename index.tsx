@@ -158,62 +158,71 @@ const VerseTracker: React.FC = () => {
   const dbRef = useRef<any>(null);
   const currentTheme = getThemeForCount(count);
 
-  // Initialize Firebase (Assuming a public project or demo credentials)
+  // Initialize Firebase (Assuming standard compat mode via window object)
   useEffect(() => {
     const firebaseConfig = {
-      databaseURL: "https://asp-verse-tracker-default-rtdb.firebaseio.com" // Placeholder for project root
+      databaseURL: "https://asp-verse-tracker-default-rtdb.firebaseio.com"
     };
     
     try {
-      if (!(window as any).firebase.apps.length) {
-        (window as any).firebase.initializeApp(firebaseConfig);
+      const fb = (window as any).firebase;
+      if (fb && !fb.apps.length) {
+        fb.initializeApp(firebaseConfig);
       }
-      dbRef.current = (window as any).firebase.database().ref('verses');
-      
-      // Real-time listener
-      dbRef.current.on('value', (snapshot: any) => {
-        const val = snapshot.val();
-        if (val !== null && val !== undefined) {
-          setCount(val);
-        }
-      });
+      if (fb) {
+        dbRef.current = fb.database().ref('verses');
+        
+        // Real-time listener
+        dbRef.current.on('value', (snapshot: any) => {
+          const val = snapshot.val();
+          if (val !== null && val !== undefined) {
+            setCount(val);
+          }
+        });
+      }
     } catch (e) {
-      console.warn("Firebase Init Failed - Falling back to local state.");
+      console.warn("Firebase Init Failed - Tracking via local state only.");
     }
 
-    return () => dbRef.current?.off();
+    return () => {
+      if (dbRef.current) dbRef.current.off();
+    };
   }, []);
 
   // GSAP Animations
   const animateNumber = useCallback((theme: Theme) => {
-    if (!countRef.current || !window.gsap) return;
+    const gsap = (window as any).gsap;
+    if (!countRef.current || !gsap) return;
     
-    window.gsap.killTweensOf(countRef.current);
+    gsap.killTweensOf(countRef.current);
     
     switch (theme.animation) {
       case 'fall':
-        window.gsap.fromTo(countRef.current, { y: -300, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "bounce.out" });
+        gsap.fromTo(countRef.current, { y: -300, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "bounce.out" });
         break;
       case 'slide':
-        window.gsap.fromTo(countRef.current, { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "back.out(1.5)" });
+        gsap.fromTo(countRef.current, { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "back.out(1.5)" });
         break;
       case 'pop':
-        window.gsap.fromTo(countRef.current, { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.4)" });
+        gsap.fromTo(countRef.current, { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.4)" });
         break;
       case 'float':
-        window.gsap.fromTo(countRef.current, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" });
+        gsap.fromTo(countRef.current, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" });
         break;
       case 'zoom':
-        window.gsap.fromTo(countRef.current, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power2.inOut" });
+        gsap.fromTo(countRef.current, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power2.inOut" });
         break;
       case 'spin':
-        window.gsap.fromTo(countRef.current, { rotation: 360, scale: 0 }, { rotation: 0, scale: 1, duration: 0.8, ease: "power2.out" });
+        gsap.fromTo(countRef.current, { rotation: 360, scale: 0 }, { rotation: 0, scale: 1, duration: 0.8, ease: "power2.out" });
         break;
     }
   }, []);
 
   // Particles
   const spawnParticle = useCallback((theme: Theme) => {
+    const gsap = (window as any).gsap;
+    if (!gsap) return;
+
     const emoji = theme.elements[Math.floor(Math.random() * theme.elements.length)];
     const p = document.createElement('div');
     p.innerText = emoji;
@@ -225,7 +234,7 @@ const VerseTracker: React.FC = () => {
     p.style.zIndex = '100';
     document.body.appendChild(p);
 
-    window.gsap.fromTo(p, 
+    gsap.fromTo(p, 
       { x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50, scale: 0, opacity: 1 },
       { 
         x: (Math.random() - 0.5) * 1000, 
@@ -249,7 +258,6 @@ const VerseTracker: React.FC = () => {
       setCount(val);
     }
     
-    // Play sounds & animate
     if (val % 50 === 0 && val !== 0) {
       playMilestone();
     } else {
@@ -261,11 +269,6 @@ const VerseTracker: React.FC = () => {
   };
 
   const increment = () => updateCount(count + 1);
-
-  // Persistence for local fallback
-  useEffect(() => {
-    localStorage.setItem('asp-offline-count', count.toString());
-  }, [count]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -300,7 +303,6 @@ const VerseTracker: React.FC = () => {
         overflow: 'hidden'
       }}
     >
-      {/* Broadcast Overlay Texture */}
       <div style={{
         position: 'absolute',
         inset: 0,
@@ -310,7 +312,6 @@ const VerseTracker: React.FC = () => {
         zIndex: 100
       }} />
 
-      {/* Dynamic Background Elements */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.15 }}>
         {currentTheme.elements.map((el, i) => (
           <div 
@@ -336,7 +337,6 @@ const VerseTracker: React.FC = () => {
         }
       `}</style>
 
-      {/* Main Number */}
       <div 
         ref={countRef}
         onClick={increment}
@@ -368,7 +368,6 @@ const VerseTracker: React.FC = () => {
         Verses Shared
       </div>
 
-      {/* Build Info */}
       {buildInfoVisible && (
         <div style={{
           position: 'absolute',
@@ -383,16 +382,15 @@ const VerseTracker: React.FC = () => {
           padding: '5px 15px',
           borderRadius: '20px'
         }}>
-          AFRICA SCHOOLS PROJECT // BROADCAST FEED // LIVE SYNC ACTIVE // v2.5.0
+          AFRICA SCHOOLS PROJECT // BROADCAST FEED // LIVE SYNC ACTIVE // v2.5.1
         </div>
       )}
 
-      {/* Start Button */}
       {!isStarted && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.9)',
+          background: 'rgba(0,0,0,0.95)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -416,15 +414,12 @@ const VerseTracker: React.FC = () => {
               boxShadow: '0 10px 40px rgba(255,193,7,0.4)',
               transition: 'transform 0.2s'
             }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             INITIALIZE BROADCAST
           </button>
         </div>
       )}
 
-      {/* Admin Gear Icon */}
       <div 
         style={{
           position: 'absolute',
@@ -435,8 +430,8 @@ const VerseTracker: React.FC = () => {
           zIndex: 1000,
           transition: 'opacity 0.3s'
         }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.1'}
+        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.1')}
         onClick={() => setIsAdminOpen(!isAdminOpen)}
       >
         <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
@@ -491,7 +486,6 @@ const adminBtnStyle: React.CSSProperties = {
   fontWeight: 700,
   backgroundColor: '#FFEB3B',
   cursor: 'pointer',
-  transition: 'transform 0.1s'
 };
 
 const root = createRoot(document.getElementById('root')!);

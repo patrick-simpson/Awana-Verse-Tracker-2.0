@@ -96,7 +96,7 @@ const THEMES: Theme[] = [
   },
   {
     id: 'celebration',
-    name: 'Awana Celebration',
+    name: 'Grand Celebration',
     bg: 'radial-gradient(circle at center, #FFD700 0%, #FBC02D 100%)',
     accent: '#FFFFFF',
     text: '#1B5E20',
@@ -161,7 +161,7 @@ const VerseTracker: React.FC = () => {
   // Initialize Firebase (Assuming a public project or demo credentials)
   useEffect(() => {
     const firebaseConfig = {
-      databaseURL: "https://awana-africa-default-rtdb.firebaseio.com" // Placeholder for project root
+      databaseURL: "https://asp-verse-tracker-default-rtdb.firebaseio.com" // Placeholder for project root
     };
     
     try {
@@ -178,7 +178,7 @@ const VerseTracker: React.FC = () => {
         }
       });
     } catch (e) {
-      console.warn("Firebase Init Failed - Falling back to local state. This is normal if config is missing.");
+      console.warn("Firebase Init Failed - Falling back to local state.");
     }
 
     return () => dbRef.current?.off();
@@ -264,7 +264,7 @@ const VerseTracker: React.FC = () => {
 
   // Persistence for local fallback
   useEffect(() => {
-    localStorage.setItem('awana-offline-count', count.toString());
+    localStorage.setItem('asp-offline-count', count.toString());
   }, [count]);
 
   useEffect(() => {
@@ -334,10 +334,6 @@ const VerseTracker: React.FC = () => {
           from { transform: translate(0, 0) rotate(0deg); }
           to { transform: translate(50px, -50px) rotate(20deg); }
         }
-        @font-face {
-          font-family: 'NumFont';
-          src: local('Impact'), local('Arial Black');
-        }
       `}</style>
 
       {/* Main Number */}
@@ -387,7 +383,7 @@ const VerseTracker: React.FC = () => {
           padding: '5px 15px',
           borderRadius: '20px'
         }}>
-          AWANA AFRICA // BROADCAST FEED // LIVE SYNC ACTIVE // v2.5.0
+          AFRICA SCHOOLS PROJECT // BROADCAST FEED // LIVE SYNC ACTIVE // v2.5.0
         </div>
       )}
 
@@ -404,8 +400,8 @@ const VerseTracker: React.FC = () => {
           zIndex: 2000,
           backdropFilter: 'blur(15px)'
         }}>
-          <h1 style={{ fontSize: '4rem', fontWeight: 900, color: '#FFC107', margin: '0 0 1rem 0' }}>AWANA AFRICA</h1>
-          <p style={{ fontSize: '1.2rem', opacity: 0.7, marginBottom: '3rem' }}>SCHOOLS PROJECT VERSE TRACKER</p>
+          <h1 style={{ fontSize: '4rem', fontWeight: 900, color: '#FFC107', margin: '0 0 1rem 0', textAlign: 'center' }}>AFRICA SCHOOLS PROJECT</h1>
+          <p style={{ fontSize: '1.2rem', opacity: 0.7, marginBottom: '3rem' }}>VERSE TRACKER BROADCAST SYSTEM</p>
           <button 
             onClick={startApp}
             style={{

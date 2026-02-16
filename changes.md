@@ -1,4 +1,4 @@
-# Change Log - Awana Verse Tracker
+# Change Log - Africa Schools Project Verse Tracker
 
 ## [2.5.0] - 2024-05-22
 ### Changed
@@ -7,6 +7,7 @@
 - **Reliability Fix**: Updated index.html and scripts to prevent "grey screen" loading issues.
 - **Theming**: Expanded to 10 unique themes (0-1000 verses) with distinct background gradients and animations.
 - **GSAP Compatibility**: Refined animation triggers to be more resilient across different browser performance levels.
+- **Branding**: Removed all specific organization names to generalized branding for Africa Schools Project.
 
 ### Fixed
 - Initialization bug where React might fail to mount before assets loaded.

@@ -29,6 +29,7 @@
   "imports": {
     "react": "https://esm.sh/react@18.2.0",
     "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
     "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
@@ -43,9 +44,9 @@
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom';
+        import { createRoot } from 'react-dom/client';
         import { initializeApp, getApps, getApp } from 'firebase/app';
-        import { getDatabase, ref, onValue, set, off } from 'firebase/database';
+        import { getDatabase, ref, onValue, set } from 'firebase/database';
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -58,10 +59,11 @@
             appId: "1:825987576771:web:f293d618dad3ded2c70376"
         };
 
+        // Standardized Init Pattern
         const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+        // CRITICAL: Pass 'app' instance explicitly to ensure the service is linked
         const db = getDatabase(app);
 
-        // --- Theme Engine ---
         const THEMES = {
             0: { name: "Sunrise Savanna", gradient: "from-orange-500 to-yellow-500", text: "text-white", sec: "text-orange-950", elements: ["☀️", "🦒", "🐘"] },
             100: { name: "Village Map", gradient: "from-amber-800 to-stone-900", text: "text-stone-100", sec: "text-amber-400", elements: ["🗺️", "🛖", "🥁"] },
@@ -76,21 +78,22 @@
             return THEMES[key];
         };
 
-        // --- Audio Utils ---
         let audioCtx = null;
         const playPop = () => {
             if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueToTime(110, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(); 
+                osc.stop(audioCtx.currentTime + 0.1);
+            } catch (e) {}
         };
 
-        // --- Main App Component ---
         const App = () => {
             const [count, setCount] = useState(0);
             const [isStarted, setIsStarted] = useState(false);
@@ -100,11 +103,13 @@
             const theme = getActiveTheme(count);
 
             useEffect(() => {
+                if (!db) return;
                 const countRef = ref(db, 'verseCount/current');
-                onValue(countRef, (snap) => {
+                const unsubscribe = onValue(countRef, (snap) => {
                     const val = snap.val();
                     if (val !== null) setCount(Number(val));
                 });
+                return () => unsubscribe();
             }, []);
 
             useEffect(() => {
@@ -125,7 +130,6 @@
             return (
                 <div className={`w-full h-screen bg-gradient-to-br ${theme.gradient} flex items-center justify-center transition-colors duration-1000`}>
                     
-                    {/* Whimsy elements */}
                     <div className="absolute inset-0 pointer-events-none opacity-20">
                         {theme.elements.map((el, i) => (
                             <div key={i} className="absolute floating text-8xl" style={{ left: `${20+i*30}%`, top: `${20+i*20}%`, animationDelay: `${i}s` }}>{el}</div>
@@ -137,10 +141,9 @@
                         <div className="glass-panel px-16 py-10 rounded-[4rem] shadow-2xl">
                             <div ref={numberRef} className={`text-[25vw] font-[900] text-outline leading-none ${theme.text}`}>{count}</div>
                         </div>
-                        <div className="mt-12 text-white/50 font-mono text-xs tracking-widest">LIVE BROADCAST FEED // RECOVERY ACTIVE</div>
+                        <div className="mt-12 text-white/50 font-mono text-xs tracking-widest uppercase">Broadcast Feed // Sync Active // v2.4</div>
                     </div>
 
-                    {/* Admin Toggle */}
                     <div className="fixed bottom-6 right-6">
                         <button onClick={() => setIsAdmin(!isAdmin)} className="p-3 text-white opacity-10 hover:opacity-100 transition-opacity">⚙️</button>
                         {isAdmin && (
@@ -155,12 +158,19 @@
                         )}
                     </div>
 
-                    {/* Start Overlay */}
                     {!isStarted && (
                         <div className="fixed inset-0 z-50 bg-stone-900/95 flex items-center justify-center text-center">
                             <div className="p-12 glass-panel border-2 border-yellow-400 rounded-[3rem]">
-                                <h1 className="text-4xl font-black text-white mb-8 tracking-tighter">AWANA AFRICA LIVE</h1>
-                                <button onClick={() => { audioCtx = new AudioContext(); setIsStarted(true); }} className="bg-yellow-400 text-stone-900 font-black py-5 px-12 rounded-full text-xl hover:scale-105 active:scale-95 transition-all">START BROADCAST</button>
+                                <h1 className="text-4xl font-black text-white mb-8 tracking-tighter italic">AWANA AFRICA PROGRESS</h1>
+                                <button 
+                                    onClick={() => { 
+                                        audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                                        setIsStarted(true); 
+                                    }} 
+                                    className="bg-yellow-400 text-stone-900 font-black py-5 px-12 rounded-full text-xl hover:scale-105 active:scale-95 transition-all shadow-xl"
+                                >
+                                    START BROADCAST
+                                </button>
                             </div>
                         </div>
                     )}
@@ -168,7 +178,8 @@
             );
         };
 
-        const root = createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = createRoot(container);
         root.render(<App />);
     </script>
 </body>

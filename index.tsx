@@ -1,54 +1,116 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
-// --- Types & Constants ---
-type ThemeType = 'savanna' | 'jungle' | 'school' | 'celebration';
-
-const THEMES: Record<ThemeType, {
+// --- Theme Definitions ---
+interface Theme {
+  id: string;
+  name: string;
   bg: string;
   accent: string;
   text: string;
   elements: string[];
-  animation: 'fall' | 'slide' | 'pop' | 'flash';
-}> = {
-  savanna: {
-    bg: 'linear-gradient(135deg, #f39c12 0%, #d35400 100%)', // Sunrise Savanna
-    accent: '#FFD700', // Awana Yellow
-    text: '#ffffff',
-    elements: ['🐘', '🦒', '🌅', '☀️', '🦓'],
+  animation: 'fall' | 'slide' | 'pop' | 'float' | 'spin' | 'zoom';
+}
+
+const THEMES: Theme[] = [
+  {
+    id: 'savanna',
+    name: 'Sunrise Savanna',
+    bg: 'linear-gradient(135deg, #FF9800 0%, #E65100 100%)',
+    accent: '#FFEB3B',
+    text: '#FFFFFF',
+    elements: ['🐘', '🦒', '☀️', '🦓', '🌳'],
     animation: 'fall'
   },
-  jungle: {
-    bg: 'linear-gradient(135deg, #27ae60 0%, #145a32 100%)', // Green Jungle
-    accent: '#a2d149',
-    text: '#ffffff',
-    elements: ['🌿', '🐒', '🦜', '🌴', '🐍'],
+  {
+    id: 'village',
+    name: 'Village Map',
+    bg: 'linear-gradient(135deg, #8D6E63 0%, #4E342E 100%)',
+    accent: '#FFD54F',
+    text: '#FFFFFF',
+    elements: ['🛖', '🥣', '🧺', '🐾', '🏜️'],
     animation: 'slide'
   },
-  school: {
-    bg: 'linear-gradient(135deg, #686158 0%, #2c3e50 100%)', // Flint Grey / Building
-    accent: '#e67e22',
-    text: '#ffffff',
-    elements: ['🧱', '📐', '🏫', '🏗️', '📝'],
+  {
+    id: 'school',
+    name: 'Building a School',
+    bg: 'linear-gradient(135deg, #686158 0%, #263238 100%)',
+    accent: '#FFC107',
+    text: '#FFFFFF',
+    elements: ['🧱', '🏗️', '📐', '🏫', '📝'],
     animation: 'pop'
   },
-  celebration: {
-    bg: 'radial-gradient(circle at center, #FFD700 0%, #f1c40f 100%)', // High Energy
-    accent: '#ffffff',
-    text: '#2c3e50',
-    elements: ['🎉', '✨', '🎈', '🎊', '🏆'],
-    animation: 'flash'
+  {
+    id: 'jungle',
+    name: 'The Great Jungle',
+    bg: 'linear-gradient(135deg, #43A047 0%, #1B5E20 100%)',
+    accent: '#C0CA33',
+    text: '#FFFFFF',
+    elements: ['🌴', '🐒', '🦜', '🐆', '🐍'],
+    animation: 'float'
+  },
+  {
+    id: 'water',
+    name: 'Life Giving Water',
+    bg: 'linear-gradient(135deg, #0288D1 0%, #01579B 100%)',
+    accent: '#81D4FA',
+    text: '#FFFFFF',
+    elements: ['💧', '🛶', '🐟', '🌊', '🐳'],
+    animation: 'zoom'
+  },
+  {
+    id: 'harvest',
+    name: 'Abundant Harvest',
+    bg: 'linear-gradient(135deg, #FBC02D 0%, #F57F17 100%)',
+    accent: '#FFFFFF',
+    text: '#3E2723',
+    elements: ['🌾', '🌽', '🍎', '🧺', '🚜'],
+    animation: 'spin'
+  },
+  {
+    id: 'mountain',
+    name: 'Mountain Peak',
+    bg: 'linear-gradient(135deg, #7E57C2 0%, #311B92 100%)',
+    accent: '#B39DDB',
+    text: '#FFFFFF',
+    elements: ['⛰️', '🦅', '❄️', '🧗', '💨'],
+    animation: 'fall'
+  },
+  {
+    id: 'city',
+    name: 'Future City',
+    bg: 'linear-gradient(135deg, #212121 0%, #000000 100%)',
+    accent: '#FF4081',
+    text: '#FFFFFF',
+    elements: ['🏙️', '✨', '⚡', '🚀', '🚁'],
+    animation: 'slide'
+  },
+  {
+    id: 'sky',
+    name: 'Infinite Sky',
+    bg: 'linear-gradient(135deg, #4FC3F7 0%, #0288D1 100%)',
+    accent: '#FFFFFF',
+    text: '#FFFFFF',
+    elements: ['☁️', '🕊️', '✈️', '🌈', '🎈'],
+    animation: 'pop'
+  },
+  {
+    id: 'celebration',
+    name: 'Awana Celebration',
+    bg: 'radial-gradient(circle at center, #FFD700 0%, #FBC02D 100%)',
+    accent: '#FFFFFF',
+    text: '#1B5E20',
+    elements: ['🎉', '🏆', '🎈', '🎊', '🥇'],
+    animation: 'zoom'
   }
+];
+
+const getThemeForCount = (count: number): Theme => {
+  const index = Math.min(Math.floor(count / 100), THEMES.length - 1);
+  return THEMES[index];
 };
 
-const getThemeForCount = (count: number): ThemeType => {
-  if (count <= 100) return 'savanna';
-  if (count <= 200) return 'jungle';
-  if (count <= 500) return 'school';
-  return 'celebration';
-};
-
-// --- Audio Engine ---
+// --- Audio System ---
 let audioCtx: AudioContext | null = null;
 
 const playPop = () => {
@@ -57,8 +119,8 @@ const playPop = () => {
   const gain = audioCtx.createGain();
   osc.type = 'sine';
   osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
@@ -69,191 +131,157 @@ const playPop = () => {
 const playMilestone = () => {
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
-  const freqs = [261.63, 329.63, 392.00, 523.25]; // C Major
-  freqs.forEach((f, i) => {
+  const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+  notes.forEach((freq, i) => {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(f, now + (i * 0.05));
-    gain.gain.setValueAtTime(0, now + (i * 0.05));
-    gain.gain.linearRampToValueAtTime(0.1, now + (i * 0.05) + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.05) + 1.5);
+    osc.frequency.setValueAtTime(freq, now + (i * 0.1));
+    gain.gain.setValueAtTime(0, now + (i * 0.1));
+    gain.gain.linearRampToValueAtTime(0.1, now + (i * 0.1) + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.8);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    osc.start(now + (i * 0.05));
-    osc.stop(now + (i * 0.05) + 1.5);
+    osc.start(now + (i * 0.1));
+    osc.stop(now + (i * 0.1) + 0.8);
   });
 };
 
-// --- Main Component ---
+// --- App Component ---
 const VerseTracker: React.FC = () => {
-  const [count, setCount] = useState<number>(() => {
-    const saved = localStorage.getItem('awana-verse-count');
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  const [count, setCount] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [buildInfoVisible, setBuildInfoVisible] = useState(true);
-  const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
-  const [timerAlert, setTimerAlert] = useState(false);
   
   const countRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<HTMLDivElement>(null);
-  const theme = THEMES[getThemeForCount(count)];
+  const dbRef = useRef<any>(null);
+  const currentTheme = getThemeForCount(count);
 
-  // Persistence
+  // Initialize Firebase (Assuming a public project or demo credentials)
   useEffect(() => {
-    localStorage.setItem('awana-verse-count', count.toString());
-  }, [count]);
-
-  // Build info cleanup
-  useEffect(() => {
-    const timer = setTimeout(() => setBuildInfoVisible(false), 8000);
-    return () => clearTimeout(timer);
-  }, [isStarted]);
-
-  // Countdown Logic
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      let target = new Date();
-      target.setHours(18, 30, 0, 0); // 6:30 PM
-
-      // If it's already past 6:30 PM, set target for tomorrow
-      if (now.getTime() > target.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-
-      const diff = target.getTime() - now.getTime();
-      
-      if (diff <= 1000 && diff > 0) {
-        // Trigger alert at zero
-        setTimerAlert(true);
-        playMilestone();
-        gsap.to(document.body, { backgroundColor: '#FFD700', duration: 0.5, yoyo: true, repeat: 3 });
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const firebaseConfig = {
+      databaseURL: "https://awana-africa-default-rtdb.firebaseio.com" // Placeholder for project root
     };
+    
+    try {
+      if (!(window as any).firebase.apps.length) {
+        (window as any).firebase.initializeApp(firebaseConfig);
+      }
+      dbRef.current = (window as any).firebase.database().ref('verses');
+      
+      // Real-time listener
+      dbRef.current.on('value', (snapshot: any) => {
+        const val = snapshot.val();
+        if (val !== null && val !== undefined) {
+          setCount(val);
+        }
+      });
+    } catch (e) {
+      console.warn("Firebase Init Failed - Falling back to local state. This is normal if config is missing.");
+    }
 
-    const interval = setInterval(() => {
-      const remaining = calculateTimeLeft();
-      setTimeLeft(remaining);
-    }, 1000);
-
-    return () => clearInterval(interval);
+    return () => dbRef.current?.off();
   }, []);
 
-  const triggerAnimation = useCallback((type: 'fall' | 'slide' | 'pop' | 'flash') => {
-    if (!countRef.current) return;
+  // GSAP Animations
+  const animateNumber = useCallback((theme: Theme) => {
+    if (!countRef.current || !window.gsap) return;
     
-    gsap.killTweensOf(countRef.current);
+    window.gsap.killTweensOf(countRef.current);
     
-    switch (type) {
+    switch (theme.animation) {
       case 'fall':
-        gsap.fromTo(countRef.current, { y: -200, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "bounce.out" });
+        window.gsap.fromTo(countRef.current, { y: -300, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "bounce.out" });
         break;
       case 'slide':
-        gsap.fromTo(countRef.current, { x: 300, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "back.out(1.7)" });
+        window.gsap.fromTo(countRef.current, { x: 500, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "back.out(1.5)" });
         break;
       case 'pop':
-        gsap.fromTo(countRef.current, { scale: 0, rotation: -15 }, { scale: 1, rotation: 0, duration: 0.5, ease: "elastic.out(1, 0.5)" });
+        window.gsap.fromTo(countRef.current, { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.7, ease: "elastic.out(1, 0.4)" });
         break;
-      case 'flash':
-        gsap.fromTo(countRef.current, { filter: 'brightness(3)' }, { filter: 'brightness(1)', duration: 0.4 });
-        gsap.fromTo(countRef.current, { scale: 1.2 }, { scale: 1, duration: 0.3 });
+      case 'float':
+        window.gsap.fromTo(countRef.current, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" });
+        break;
+      case 'zoom':
+        window.gsap.fromTo(countRef.current, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power2.inOut" });
+        break;
+      case 'spin':
+        window.gsap.fromTo(countRef.current, { rotation: 360, scale: 0 }, { rotation: 0, scale: 1, duration: 0.8, ease: "power2.out" });
         break;
     }
   }, []);
 
-  const increment = useCallback(() => {
-    setCount(prev => {
-      const next = prev + 1;
-      if (next % 100 === 0 || next % 50 === 0) {
-        playMilestone();
-      } else {
-        playPop();
-      }
-      return next;
-    });
-
-    triggerAnimation(theme.animation);
-
-    // Particle Effect
+  // Particles
+  const spawnParticle = useCallback((theme: Theme) => {
     const emoji = theme.elements[Math.floor(Math.random() * theme.elements.length)];
     const p = document.createElement('div');
     p.innerText = emoji;
     p.style.position = 'fixed';
     p.style.left = '50%';
     p.style.top = '50%';
-    p.style.fontSize = '3rem';
+    p.style.fontSize = '4rem';
     p.style.pointerEvents = 'none';
-    p.style.zIndex = '10';
+    p.style.zIndex = '100';
     document.body.appendChild(p);
 
-    gsap.fromTo(p, 
-      { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100, opacity: 1, scale: 0 },
+    window.gsap.fromTo(p, 
+      { x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50, scale: 0, opacity: 1 },
       { 
-        y: '-=500', 
-        x: (Math.random() - 0.5) * 600,
+        x: (Math.random() - 0.5) * 1000, 
+        y: -window.innerHeight - 200, 
+        scale: 2 + Math.random() * 2, 
         opacity: 0, 
-        scale: 2.5, 
-        rotation: Math.random() * 720,
-        duration: 2.5, 
-        ease: "power1.out",
-        onComplete: () => p.remove() 
+        rotation: Math.random() * 1080,
+        duration: 2.5 + Math.random() * 1,
+        ease: "power2.out",
+        onComplete: () => p.remove()
       }
     );
-  }, [theme, triggerAnimation]);
+  }, []);
 
-  const handleReset = useCallback(() => {
-    if (confirm('Are you sure you want to reset the count to 0? This cannot be undone.')) {
-      setCount(0);
+  // Update Logic
+  const updateCount = (newCount: number) => {
+    const val = Math.max(0, newCount);
+    if (dbRef.current) {
+      dbRef.current.set(val);
+    } else {
+      setCount(val);
+    }
+    
+    // Play sounds & animate
+    if (val % 50 === 0 && val !== 0) {
       playMilestone();
-      triggerAnimation('pop');
+    } else {
+      playPop();
     }
-  }, [triggerAnimation]);
+    
+    animateNumber(getThemeForCount(val));
+    spawnParticle(getThemeForCount(val));
+  };
 
-  const handleManualSet = useCallback(() => {
-    const val = prompt('Set exact verse count:', count.toString());
-    if (val !== null) {
-      const n = parseInt(val, 10);
-      if (!isNaN(n)) {
-        setCount(n);
-        triggerAnimation('pop');
-      }
-    }
-  }, [count, triggerAnimation]);
+  const increment = () => updateCount(count + 1);
+
+  // Persistence for local fallback
+  useEffect(() => {
+    localStorage.setItem('awana-offline-count', count.toString());
+  }, [count]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp'].includes(e.key)) {
-        if (!isStarted) return;
-        increment();
-      } else if (e.key.toLowerCase() === 'r') {
-        handleReset();
-      } else if (e.key.toLowerCase() === 's') {
-        handleManualSet();
-      }
+    const handleKey = (e: KeyboardEvent) => {
+      if (!isStarted) return;
+      if (['ArrowRight', 'ArrowUp', 'PageUp', 'Enter'].includes(e.key)) increment();
+      if (['ArrowLeft', 'ArrowDown', 'PageDown'].includes(e.key)) updateCount(count - 1);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [increment, handleReset, handleManualSet, isStarted]);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [count, isStarted]);
 
-  const startBroadcast = () => {
+  const startApp = () => {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     setIsStarted(true);
-    setBuildInfoVisible(false);
-    triggerAnimation(theme.animation);
-    
-    // Animate timer in
-    if (timerRef.current) {
-      gsap.fromTo(timerRef.current, { y: -50, opacity: 0 }, { y: 0, opacity: 1, delay: 1, duration: 1, ease: "power2.out" });
-    }
+    setTimeout(() => setBuildInfoVisible(false), 5000);
+    animateNumber(currentTheme);
   };
 
   return (
@@ -265,87 +293,35 @@ const VerseTracker: React.FC = () => {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        background: theme.bg,
-        color: theme.text,
-        transition: 'background 1.5s cubic-bezier(0.4, 0, 0.2, 1), color 1s ease',
+        background: currentTheme.bg,
+        color: currentTheme.text,
+        transition: 'background 1.5s ease-in-out',
         position: 'relative',
         overflow: 'hidden'
       }}
     >
-      {/* Broadcast CRT/Scanline Overlay */}
+      {/* Broadcast Overlay Texture */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))',
+        background: 'linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.05) 50%), linear-gradient(90deg, rgba(255,0,0,0.01), rgba(0,255,0,0.01), rgba(0,0,255,0.01))',
         backgroundSize: '100% 4px, 3px 100%',
         pointerEvents: 'none',
-        zIndex: 100,
-        opacity: 0.4
+        zIndex: 100
       }} />
 
-      {/* Countdown Timer */}
-      <div 
-        ref={timerRef}
-        style={{
-          position: 'absolute',
-          top: '40px',
-          right: '40px',
-          background: 'rgba(0,0,0,0.3)',
-          padding: '15px 30px',
-          borderRadius: '15px',
-          backdropFilter: 'blur(10px)',
-          border: `2px solid ${theme.accent}`,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-          zIndex: 200,
-          textAlign: 'right',
-          opacity: 0 // Animate in on start
-        }}
-      >
-        <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.8, fontWeight: 700 }}>Next Session In</div>
-        <div style={{ fontSize: '2.5rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.05em' }}>
-          {timeLeft}
-        </div>
-      </div>
-
-      {/* Build Info Overlay */}
-      {buildInfoVisible && (
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          fontSize: '12px',
-          opacity: 0.6,
-          zIndex: 150,
-          pointerEvents: 'none',
-          backgroundColor: 'rgba(0,0,0,0.2)',
-          padding: '5px 10px',
-          borderRadius: '4px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>
-          LIVE FEED // BUILD 2.2.0 // {new Date().toLocaleTimeString()}
-        </div>
-      )}
-
-      {/* Background Elements */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        opacity: 0.2
-      }}>
-        {theme.elements.map((el, i) => (
+      {/* Dynamic Background Elements */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.15 }}>
+        {currentTheme.elements.map((el, i) => (
           <div 
-            key={`${getThemeForCount(count)}-${i}`}
+            key={`${currentTheme.id}-${i}`}
             style={{
               position: 'absolute',
-              fontSize: '6rem',
-              left: `${(i * 25) % 100}%`,
-              top: `${(i * 35) % 80 + 10}%`,
-              animation: `float ${10 + i * 2}s infinite ease-in-out alternate`
+              fontSize: '8rem',
+              left: `${(i * 30) % 90 + 5}%`,
+              top: `${(i * 25) % 70 + 15}%`,
+              filter: 'blur(2px)',
+              animation: `float-bg ${15 + i * 5}s infinite ease-in-out alternate`
             }}
           >
             {el}
@@ -354,166 +330,158 @@ const VerseTracker: React.FC = () => {
       </div>
 
       <style>{`
-        @keyframes float {
-          0% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(20px, -30px) rotate(5deg); }
-          100% { transform: translate(-20px, 20px) rotate(-5deg); }
+        @keyframes float-bg {
+          from { transform: translate(0, 0) rotate(0deg); }
+          to { transform: translate(50px, -50px) rotate(20deg); }
+        }
+        @font-face {
+          font-family: 'NumFont';
+          src: local('Impact'), local('Arial Black');
         }
       `}</style>
 
-      {/* Main Counter Display */}
+      {/* Main Number */}
       <div 
         ref={countRef}
+        onClick={increment}
         style={{
-          fontSize: '45vw',
+          fontSize: '48vw',
           fontWeight: 900,
-          lineHeight: 0.8,
+          fontFamily: "'Poppins', sans-serif",
+          lineHeight: 0.85,
           textAlign: 'center',
-          textShadow: '0 30px 60px rgba(0,0,0,0.4)',
-          cursor: 'pointer',
           userSelect: 'none',
+          cursor: 'pointer',
           zIndex: 50,
+          textShadow: '0 40px 80px rgba(0,0,0,0.3)',
           fontVariantNumeric: 'tabular-nums'
         }}
-        onClick={increment}
       >
         {count}
       </div>
-      
-      <div style={{ 
-        fontSize: '3vw', 
-        opacity: 0.9, 
-        letterSpacing: '0.3em', 
-        textTransform: 'uppercase', 
+
+      <div style={{
+        fontSize: '2.5vw',
         fontWeight: 700,
-        zIndex: 50,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5em',
+        opacity: 0.8,
         marginTop: '2rem',
-        textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        zIndex: 50
       }}>
-        Verses Recited
+        Verses Shared
       </div>
 
-      {/* Timer Alert Overlay */}
-      {timerAlert && (
-        <div 
-          onClick={() => setTimerAlert(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(255, 215, 0, 0.95)',
-            zIndex: 2000,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            textAlign: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <div style={{ fontSize: '10rem' }}>🔔</div>
-          <h1 style={{ color: '#000', fontSize: '6rem', fontWeight: 900 }}>IT'S TIME!</h1>
-          <p style={{ color: '#000', fontSize: '2rem', fontWeight: 700 }}>The 6:30 PM Session is Starting Now</p>
-          <div style={{ marginTop: '2rem', padding: '10px 40px', background: '#000', color: '#fff', borderRadius: '30px', fontWeight: 900 }}>CLICK TO DISMISS</div>
+      {/* Build Info */}
+      {buildInfoVisible && (
+        <div style={{
+          position: 'absolute',
+          top: 30,
+          left: 30,
+          fontSize: '12px',
+          opacity: 0.6,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          zIndex: 200,
+          background: 'rgba(0,0,0,0.4)',
+          padding: '5px 15px',
+          borderRadius: '20px'
+        }}>
+          AWANA AFRICA // BROADCAST FEED // LIVE SYNC ACTIVE // v2.5.0
         </div>
       )}
 
-      {/* Start Overlay */}
+      {/* Start Button */}
       {!isStarted && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(21, 21, 21, 0.95)',
-          zIndex: 1000,
+          background: 'rgba(0,0,0,0.9)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          textAlign: 'center',
-          backdropFilter: 'blur(10px)'
+          zIndex: 2000,
+          backdropFilter: 'blur(15px)'
         }}>
-          <h1 style={{ color: '#FFD700', fontSize: '4rem', marginBottom: '1rem', fontWeight: 900 }}>AWANA AFRICA</h1>
-          <h2 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '3rem', opacity: 0.8 }}>SCHOOLS VERSE TRACKER v2.2</h2>
+          <h1 style={{ fontSize: '4rem', fontWeight: 900, color: '#FFC107', margin: '0 0 1rem 0' }}>AWANA AFRICA</h1>
+          <p style={{ fontSize: '1.2rem', opacity: 0.7, marginBottom: '3rem' }}>SCHOOLS PROJECT VERSE TRACKER</p>
           <button 
-            onClick={startBroadcast}
+            onClick={startApp}
             style={{
               padding: '25px 80px',
-              fontSize: '2rem',
-              backgroundColor: '#FFD700',
-              color: '#000',
-              border: 'none',
-              borderRadius: '60px',
+              fontSize: '1.8rem',
               fontWeight: 900,
+              borderRadius: '50px',
+              border: 'none',
+              backgroundColor: '#FFC107',
+              color: 'black',
               cursor: 'pointer',
-              boxShadow: '0 15px 40px rgba(255, 215, 0, 0.3)',
-              transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+              boxShadow: '0 10px 40px rgba(255,193,7,0.4)',
+              transition: 'transform 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             INITIALIZE BROADCAST
           </button>
         </div>
       )}
 
-      {/* Admin Interface */}
+      {/* Admin Gear Icon */}
       <div 
         style={{
-          position: 'fixed',
-          bottom: '30px',
-          right: '30px',
-          opacity: isAdminOpen ? 1 : 0.05,
-          transition: 'opacity 0.4s',
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          opacity: 0.1,
           cursor: 'pointer',
-          zIndex: 500,
-          color: theme.text
+          zIndex: 1000,
+          transition: 'opacity 0.3s'
         }}
-        onMouseEnter={(e) => !isAdminOpen && (e.currentTarget.style.opacity = '1')}
-        onMouseLeave={(e) => !isAdminOpen && (e.currentTarget.style.opacity = '0.05')}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.1'}
         onClick={() => setIsAdminOpen(!isAdminOpen)}
       >
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
           <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
         </svg>
       </div>
 
       {isAdminOpen && (
         <div style={{
-          position: 'fixed',
-          bottom: '90px',
-          right: '30px',
-          background: 'rgba(255,255,255,0.98)',
-          padding: '25px',
-          borderRadius: '20px',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+          position: 'absolute',
+          bottom: 70,
+          right: 20,
+          background: 'rgba(255,255,255,0.95)',
+          padding: '20px',
+          borderRadius: '15px',
+          color: 'black',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
-          color: '#222',
-          zIndex: 500,
-          minWidth: '240px',
-          border: '1px solid rgba(0,0,0,0.1)'
+          gap: '10px',
+          zIndex: 1000,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          minWidth: '220px'
         }}>
-          <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#686158', fontWeight: 900 }}>ADMIN CONSOLE</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-            <button onClick={() => setCount(c => c + 1)} style={adminBtnStyle}>+1</button>
-            <button onClick={() => setCount(c => c + 5)} style={adminBtnStyle}>+5</button>
-            <button onClick={() => setCount(c => c + 10)} style={adminBtnStyle}>+10</button>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '1rem', fontWeight: 900 }}>ADMIN CONTROL</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button style={adminBtnStyle} onClick={() => updateCount(count + 1)}>+1</button>
+            <button style={adminBtnStyle} onClick={() => updateCount(count + 5)}>+5</button>
+            <button style={adminBtnStyle} onClick={() => updateCount(count + 10)}>+10</button>
+            <button style={adminBtnStyle} onClick={() => updateCount(count + 50)}>+50</button>
           </div>
-          <button onClick={handleManualSet} style={{...adminBtnStyle, background: '#686158', color: 'white'}}>SET EXACT COUNT (S)</button>
-          <button onClick={handleReset} style={{...adminBtnStyle, background: '#e74c3c', color: 'white'}}>RESET TO ZERO (R)</button>
-          <div style={{ 
-            fontSize: '0.75rem', 
-            opacity: 0.6, 
-            marginTop: '10px', 
-            paddingTop: '10px', 
-            borderTop: '1px solid #eee',
-            lineHeight: 1.5
-          }}>
-            <strong>INPUT MAPPINGS:</strong><br/>
-            Projector Remote: +1 Verse<br/>
-            S Key: Manual Set<br/>
-            R Key: Full Reset
-          </div>
+          <button style={{ ...adminBtnStyle, width: '100%', background: '#686158', color: 'white' }} 
+            onClick={() => {
+              const val = prompt("Set exact count:", count.toString());
+              if (val) updateCount(parseInt(val, 10));
+            }}
+          >SET CUSTOM</button>
+          <button style={{ ...adminBtnStyle, width: '100%', background: '#f44336', color: 'white' }} 
+            onClick={() => {
+              if (confirm("Reset everything to zero?")) updateCount(0);
+            }}
+          >RESET ALL</button>
         </div>
       )}
     </div>
@@ -521,17 +489,14 @@ const VerseTracker: React.FC = () => {
 };
 
 const adminBtnStyle: React.CSSProperties = {
-  padding: '12px',
-  borderRadius: '10px',
+  padding: '10px',
+  borderRadius: '8px',
   border: 'none',
-  fontWeight: 'bold',
+  fontWeight: 700,
+  backgroundColor: '#FFEB3B',
   cursor: 'pointer',
-  background: '#FFD700',
-  color: '#000',
-  transition: 'all 0.2s',
-  fontSize: '0.9rem'
+  transition: 'transform 0.1s'
 };
 
-const container = document.getElementById('root');
-const root = createRoot(container!);
+const root = createRoot(document.getElementById('root')!);
 root.render(<VerseTracker />);

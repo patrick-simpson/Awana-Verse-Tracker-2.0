@@ -1,26 +1,14 @@
 # Change Log - Awana Verse Tracker
 
-## [2.2.0] - 2024-05-21
-### Added
-- **Countdown Timer**: High-visibility countdown targeting 6:30 PM local time.
-- **Dynamic Animation**: Timer fades in with GSAP upon broadcast initialization.
-- **Zero-Trigger Alert**: Full-screen notification and audio milestone fanfare when countdown hits zero.
-- **Broadcast Polish**: Refined layout to accommodate timer without distracting from the main counter.
-
-## [2.1.0] - 2024-05-20
-### Added
-- Unique GSAP entry animations for each 100-verse theme block (Fall, Slide, Pop, Flash).
-- Broadcast-quality scanline and CRT texture overlay.
-- Build information header that auto-fades after 8 seconds.
-- Interactive floating background elements (emojis) themed per level.
-- Multi-channel milestone audio fanfares.
-
-### Improved
-- LocalStorage persistence for high reliability.
-- Central counter visual hierarchy (increased size to 45vw).
-- Admin console UI with better contrast and shortcut reminders.
-- Responsive scaling for ultra-wide and standard HD broadcast resolutions.
+## [2.5.0] - 2024-05-22
+### Changed
+- **Architectural Shift**: Replaced local timer/state with Firebase Realtime Database integration for multi-device sync.
+- **Visual Polish**: Removed the "Next Session" countdown to prioritize broadcast visual space.
+- **Reliability Fix**: Updated index.html and scripts to prevent "grey screen" loading issues.
+- **Theming**: Expanded to 10 unique themes (0-1000 verses) with distinct background gradients and animations.
+- **GSAP Compatibility**: Refined animation triggers to be more resilient across different browser performance levels.
 
 ### Fixed
-- Audio context initialization race conditions on different browsers.
-- Animation stuttering by killing active GSAP tweens on new input.
+- Initialization bug where React might fail to mount before assets loaded.
+- Audio context initialization moved to explicit user gesture to comply with browser policies.
+- Background color now initializes as dark to prevent white/grey flashes during load.

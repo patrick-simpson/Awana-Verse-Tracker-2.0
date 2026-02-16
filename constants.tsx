@@ -1,96 +1,96 @@
 
-import { ThemeConfig, AnimationType } from './types';
+import { ThemeConfig, AnimationType } from './types.ts';
 
 export const THEMES: Record<number, ThemeConfig> = {
   0: {
     name: "Sunrise Savanna",
-    gradient: "from-orange-400 via-orange-500 to-yellow-600",
-    accent: "#FBBF24", // Yellow
+    gradient: "from-orange-500 via-amber-500 to-yellow-500",
+    accent: "#FBBF24",
     text: "text-white",
-    secondaryText: "text-orange-900",
+    secondaryText: "text-orange-950",
     animationType: AnimationType.FALL,
     elements: ["☀️", "🦒", "🐘", "🌳"]
   },
   100: {
-    name: "Village Map",
-    gradient: "from-amber-700 via-stone-600 to-stone-800",
-    accent: "#686158", // Flint
+    name: "Village Gathering",
+    gradient: "from-amber-800 via-stone-700 to-stone-900",
+    accent: "#686158",
     text: "text-stone-100",
-    secondaryText: "text-amber-300",
+    secondaryText: "text-amber-400",
     animationType: AnimationType.SLIDE,
-    elements: ["🗺️", "🏠", "📍", "🛖"]
+    elements: ["🗺️", "🏠", "📍", "🛖", "🥁"]
   },
   200: {
-    name: "Building Dreams",
-    gradient: "from-teal-500 via-emerald-600 to-emerald-800",
-    accent: "#10B981", // Green
+    name: "Breaking Ground",
+    gradient: "from-teal-600 via-emerald-700 to-emerald-900",
+    accent: "#10B981",
     text: "text-white",
-    secondaryText: "text-teal-100",
+    secondaryText: "text-teal-200",
     animationType: AnimationType.POP,
-    elements: ["🔨", "🏫", "🏗️", "📐"]
+    elements: ["🔨", "🏫", "🏗️", "📐", "🧱"]
   },
   300: {
-    name: "Tropical Forest",
-    gradient: "from-green-600 via-green-800 to-emerald-900",
-    accent: "#047857",
-    text: "text-lime-100",
-    secondaryText: "text-green-300",
+    name: "Jungle Growth",
+    gradient: "from-green-700 via-green-900 to-black",
+    accent: "#059669",
+    text: "text-lime-200",
+    secondaryText: "text-green-400",
     animationType: AnimationType.ROTATE,
-    elements: ["🍃", "🐒", "🦜", "🌿"]
+    elements: ["🍃", "🐒", "🦜", "🌿", "🐍"]
   },
   400: {
-    name: "Victoria Falls",
-    gradient: "from-blue-400 via-blue-600 to-indigo-800",
+    name: "Great River Flow",
+    gradient: "from-blue-500 via-blue-700 to-indigo-900",
     accent: "#3B82F6",
     text: "text-white",
-    secondaryText: "text-blue-100",
+    secondaryText: "text-blue-300",
     animationType: AnimationType.ZOOM,
-    elements: ["🌊", "🌈", "🐟", "💧"]
+    elements: ["🌊", "🌈", "🐟", "💧", "🛶"]
   },
   500: {
-    name: "Starry Night",
-    gradient: "from-indigo-900 via-purple-900 to-black",
+    name: "Open Heavens",
+    gradient: "from-indigo-950 via-purple-900 to-black",
     accent: "#FCD34D",
-    text: "text-yellow-100",
-    secondaryText: "text-indigo-300",
+    text: "text-yellow-200",
+    secondaryText: "text-indigo-400",
     animationType: AnimationType.BLUR,
-    elements: ["✨", "🌙", "🦉", "⭐"]
+    elements: ["✨", "🌙", "🦉", "⭐", "🔭"]
   },
   600: {
-    name: "Vibrant Marketplace",
-    gradient: "from-pink-500 via-red-500 to-orange-500",
+    name: "Vibrant Market",
+    gradient: "from-rose-600 via-red-700 to-orange-800",
     accent: "#FFFFFF",
     text: "text-white",
-    secondaryText: "text-pink-100",
+    secondaryText: "text-rose-200",
     animationType: AnimationType.WAVE,
-    elements: ["🍎", "🧺", "👗", "🥁"]
+    elements: ["🍎", "🧺", "👗", "🥁", "🍍"]
   },
   700: {
-    name: "Kilimanjaro Peak",
-    gradient: "from-stone-200 via-stone-400 to-stone-600",
+    name: "Mountain Majesty",
+    gradient: "from-slate-100 via-slate-400 to-slate-700",
     accent: "#1F2937",
     text: "text-slate-900",
-    secondaryText: "text-slate-500",
+    secondaryText: "text-slate-600",
     animationType: AnimationType.BOUNCE,
-    elements: ["🏔️", "❄️", "🦅", "☁️"]
+    elements: ["🏔️", "❄️", "🦅", "☁️", "🎿"]
   },
   800: {
-    name: "Modern Classroom",
-    gradient: "from-white via-blue-50 to-blue-200",
-    accent: "#2563EB",
-    text: "text-blue-900",
-    secondaryText: "text-blue-600",
+    name: "New Horizon",
+    gradient: "from-white via-cyan-50 to-cyan-200",
+    accent: "#0891B2",
+    text: "text-cyan-950",
+    secondaryText: "text-cyan-700",
     animationType: AnimationType.SPIRAL,
-    elements: ["📚", "💻", "✏️", "🎒"]
+    elements: ["📚", "💻", "✏️", "🎒", "💡"]
   },
   900: {
-    name: "Celebration Summit",
-    gradient: "from-yellow-400 via-amber-500 to-yellow-600",
+    name: "Victory Celebration",
+    gradient: "from-yellow-400 via-amber-500 to-red-600",
     accent: "#991B1B",
-    text: "text-red-900",
-    secondaryText: "text-amber-800",
+    text: "text-red-950",
+    secondaryText: "text-amber-900",
     animationType: AnimationType.CELEBRATE,
-    elements: ["🎉", "🔥", "🎖️", "🦁"]
+    elements: ["🎉", "🔥", "🎖️", "🦁", "🏆"]
   }
 };
 
@@ -100,6 +100,6 @@ export const getTheme = (count: number): ThemeConfig => {
 };
 
 export const BUILD_INFO = {
-  number: "1.0.42",
-  timestamp: new Date().toLocaleString()
+  number: "2.1.0-STABLE",
+  timestamp: new Date().toLocaleDateString()
 };

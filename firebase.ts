@@ -18,9 +18,9 @@ let db: Database | null = null;
 try {
   const app = initializeApp(firebaseConfig);
   db = getDatabase(app);
-  console.log("Firebase initialized successfully");
+  console.log("Firebase initialized");
 } catch (e) {
-  console.error("Firebase failed to load. Running in local offline mode.", e);
+  console.error("Firebase initialization failed:", e);
 }
 
 export { db };

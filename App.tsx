@@ -11,7 +11,7 @@ const AdminPanel: React.FC<{ current: number; onUpdate: (n: number) => void; onC
     <div className="absolute bottom-20 right-0 w-80 glass-panel rounded-3xl p-6 text-white shadow-2xl z-[150]">
       <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
         <h3 className="text-xl font-black uppercase tracking-widest text-yellow-400">Broadcast Desk</h3>
-        <button onClick={onClose} className="text-white/50 hover:text-white">✕</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">✕</button>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-6">
         <button onClick={() => onUpdate(current + 1)} className="bg-white/10 hover:bg-white/20 py-4 rounded-2xl font-black text-lg transition-all active:scale-95">+1</button>
@@ -50,6 +50,7 @@ const App: React.FC = () => {
   
   const numberRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<(HTMLDivElement | null)[]>([]);
   const prevCount = useRef<number>(0);
   const theme = useMemo(() => getTheme(count), [count]);
 
@@ -69,6 +70,48 @@ const App: React.FC = () => {
     });
     return () => off(countRef);
   }, []);
+
+  // Background GSAP Animations
+  useEffect(() => {
+    const gsap = (window as any).gsap;
+    if (!gsap || particlesRef.current.length === 0) return;
+
+    particlesRef.current.forEach((el, i) => {
+      if (!el) return;
+      
+      // Clear existing animations to prevent conflicts on theme change
+      gsap.killTweensOf(el);
+
+      // Unique Whimsical Movements
+      const type = i % 3;
+      if (type === 0) { // Drifting
+        gsap.to(el, {
+          x: "random(-40, 40)",
+          y: "random(-40, 40)",
+          duration: "random(8, 15)",
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        });
+      } else if (type === 1) { // Pulsing & Rotating
+        gsap.to(el, {
+          scale: 1.2,
+          rotation: "random(-45, 45)",
+          duration: "random(4, 7)",
+          repeat: -1,
+          yoyo: true,
+          ease: "power1.inOut"
+        });
+      } else { // Constant Rotation
+        gsap.to(el, {
+          rotation: 360,
+          duration: "random(20, 40)",
+          repeat: -1,
+          ease: "none"
+        });
+      }
+    });
+  }, [theme, isStarted]);
 
   useEffect(() => {
     if (count !== prevCount.current && isStarted) {
@@ -138,17 +181,19 @@ const App: React.FC = () => {
 
   return (
     <div ref={containerRef} className={`relative w-full h-screen transition-all duration-1000 bg-gradient-to-br ${theme.gradient} flex items-center justify-center overflow-hidden`}>
-      {/* Background Whimsy Particles */}
+      {/* Background Whimsy Particles with GSAP control */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         {Array.from({length: 15}).map((_, i) => (
           <div 
             key={i} 
-            className="absolute floating"
+            // Fix: Ref callback must return void or a cleanup function. Ensure assignment doesn't return value.
+            ref={el => { particlesRef.current[i] = el; }}
+            className="absolute"
             style={{ 
               left: `${(i * 13) % 100}%`, 
               top: `${(i * 21) % 100}%`,
-              animationDelay: `${i * 0.4}s`,
-              fontSize: `${40 + (i % 5) * 20}px`
+              fontSize: `${40 + (i % 5) * 20}px`,
+              willChange: "transform"
             }}
           >
             {theme.elements[i % theme.elements.length]}
@@ -169,7 +214,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Milestone Indicator - Subtle Whimsy */}
+        {/* Milestone Indicator - Subtle Whimsy Progress Bar */}
         <div className="mt-8">
             <div className={`h-1.5 w-48 bg-white/10 rounded-full mx-auto overflow-hidden`}>
                 <div 
